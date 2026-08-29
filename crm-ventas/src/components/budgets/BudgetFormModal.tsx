@@ -20,6 +20,8 @@ import { generateDocumentPDF, getDocumentPDFBlob } from '../../utils/documentPDF
 import { trySharePdf } from '../../utils/pdfShare'
 import CustomerFormModal from '../customers/CustomerFormModal'
 import ProductFormModal from '../products/ProductFormModal'
+import BarcodeScannerModal from '../ui/BarcodeScannerModal'
+import UsbBarcodeCapture from '../ui/UsbBarcodeCapture'
 import type { Customer, Product } from '../../types'
 
 interface CartLine {
@@ -46,6 +48,9 @@ export default function BudgetFormModal({ open, budget, onClose }: BudgetFormMod
   const [showCustomers, setShowCustomers] = useState(false)
   const [customerModalOpen, setCustomerModalOpen] = useState(false)
   const [productModalOpen, setProductModalOpen] = useState(false)
+  const [scannerOpen, setScannerOpen] = useState(false)
+  // Código de barras escaneado sin producto registrado (precarga el modal de producto)
+  const [preloadBarcode, setPreloadBarcode] = useState('')
 
   // Carga los datos al abrir
   useEffect(() => {
@@ -63,6 +68,8 @@ export default function BudgetFormModal({ open, budget, onClose }: BudgetFormMod
     setShowCustomers(false)
     setCustomerModalOpen(false)
     setProductModalOpen(false)
+    setScannerOpen(false)
+    setPreloadBarcode('')
   }, [open, budget])
 
   const customerById = useMemo(() => new Map(customers.map((c) => [c.id, c])), [customers])
@@ -97,7 +104,23 @@ export default function BudgetFormModal({ open, budget, onClose }: BudgetFormMod
   // Abre el modal para crear un producto nuevo (precargado con el texto buscado)
   const openCreateProduct = () => {
     setShowProducts(false)
+    setPreloadBarcode('')
     setProductModalOpen(true)
+  }
+
+  // Código escaneado (cámara o lector USB): busca el producto por código de barras
+  const handleBarcodeScanned = (code: string) => {
+    setScannerOpen(false)
+    setShowProducts(false)
+    setProductQuery('')
+    const product = products.find((p) => p.barcode && p.barcode.trim() === code.trim())
+    if (product) {
+      addProduct(product)
+      toast.success(`«${product.name}» agregado al carrito 📦`)
+    } else if (window.confirm('Producto no encontrado. ¿Quieres crearlo?')) {
+      setPreloadBarcode(code.trim())
+      setProductModalOpen(true)
+    }
   }
 
   // Producto creado desde el modal → se agrega al carrito automáticamente
@@ -305,6 +328,11 @@ export default function BudgetFormModal({ open, budget, onClose }: BudgetFormMod
       <AnimatePresence>
         {open && (
         <>
+          {/* Campo oculto que captura el input del lector USB de código de barras */}
+          <UsbBarcodeCapture
+            active={open && !productModalOpen && !scannerOpen && !customerModalOpen}
+            onScan={handleBarcodeScanned}
+          />
           <motion.div
             className="fixed inset-0 z-[60] bg-slate-950/70 backdrop-blur-sm"
             initial={{ opacity: 0 }}
@@ -429,18 +457,29 @@ export default function BudgetFormModal({ open, budget, onClose }: BudgetFormMod
                 <label className="mb-1.5 block text-xs font-medium text-slate-400">
                   Agregar producto
                 </label>
-                <div className="glass flex items-center gap-2 rounded-xl px-3 py-2">
-                  <Search className="h-4 w-4 shrink-0 text-slate-500" />
-                  <input
-                    value={productQuery}
-                    onChange={(e) => {
-                      setProductQuery(e.target.value)
-                      setShowProducts(true)
-                    }}
-                    onFocus={() => setShowProducts(true)}
-                    placeholder="Buscar por nombre…"
-                    className="w-full bg-transparent text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none"
-                  />
+                <div className="flex items-stretch gap-2">
+                  <div className="glass flex flex-1 items-center gap-2 rounded-xl px-3 py-2">
+                    <Search className="h-4 w-4 shrink-0 text-slate-500" />
+                    <input
+                      value={productQuery}
+                      onChange={(e) => {
+                        setProductQuery(e.target.value)
+                        setShowProducts(true)
+                      }}
+                      onFocus={() => setShowProducts(true)}
+                      placeholder="Buscar por nombre…"
+                      className="w-full bg-transparent text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setScannerOpen(true)}
+                    title="Escanear código de barras"
+                    aria-label="Escanear código de barras"
+                    className="flex shrink-0 items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.05] px-2.5 text-xs font-semibold text-slate-200 transition-all hover:bg-white/[0.12] hover:text-white active:scale-95"
+                  >
+                    📷 Escanear
+                  </button>
                 </div>
                 {showProducts && productResults.length > 0 && (
                   <div className="absolute z-50 mt-1 w-full overflow-hidden rounded-xl border border-white/10 bg-slate-900/95 shadow-xl backdrop-blur-md">
@@ -667,8 +706,16 @@ export default function BudgetFormModal({ open, budget, onClose }: BudgetFormMod
       open={productModalOpen}
       product={null}
       initialName={productQuery.trim()}
+      initialBarcode={preloadBarcode}
       onClose={() => setProductModalOpen(false)}
       onSaved={handleProductSaved}
+    />
+
+    {/* Modal de escáner de código de barras (cámara) */}
+    <BarcodeScannerModal
+      open={scannerOpen}
+      onClose={() => setScannerOpen(false)}
+      onScan={handleBarcodeScanned}
     />
     </>
   )

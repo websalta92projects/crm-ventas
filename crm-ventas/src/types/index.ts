@@ -7,6 +7,8 @@ export interface Product {
   cost: number
   stock: number
   emoji: string
+  // Código de barras (opcional): se usa para escanear y agregar al carrito
+  barcode?: string
 }
 
 // Estado de una venta (Fase 5: 4 estados)

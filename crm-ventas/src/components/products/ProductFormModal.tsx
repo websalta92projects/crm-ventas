@@ -15,6 +15,8 @@ interface ProductFormModalProps {
   onClose: () => void
   // Precarga el nombre del producto (ej. al crearlo desde el buscador de presupuesto/venta)
   initialName?: string
+  // Precarga el código de barras (ej. al escanear un código sin producto registrado)
+  initialBarcode?: string
   // Se llama tras guardar con el producto creado/actualizado (para agregarlo al carrito)
   onSaved?: (product: Product) => void
 }
@@ -24,12 +26,14 @@ export default function ProductFormModal({
   product,
   onClose,
   initialName,
+  initialBarcode,
   onSaved,
 }: ProductFormModalProps) {
   const products = useSalesStore((s) => s.products)
   const saveProduct = useSalesStore((s) => s.saveProduct)
 
   const [name, setName] = useState('')
+  const [barcode, setBarcode] = useState('')
   const [description, setDescription] = useState('')
   const [category, setCategory] = useState('')
   const [price, setPrice] = useState('')
@@ -53,6 +57,7 @@ export default function ProductFormModal({
   useEffect(() => {
     if (!open) return
     setName(product?.name ?? initialName ?? '')
+    setBarcode(product?.barcode ?? initialBarcode ?? '')
     setDescription(product?.description ?? '')
     setCategory(product?.category ?? '')
     setPrice(product ? String(product.price) : '')
@@ -64,7 +69,7 @@ export default function ProductFormModal({
     setCatOpen(false)
     setCreatingCategory(false)
     setNewCategory('')
-  }, [open, product, initialName])
+  }, [open, product, initialName, initialBarcode])
 
   const priceNum = parseFloat(price)
   const costNum = parseFloat(cost)
@@ -97,6 +102,18 @@ export default function ProductFormModal({
       return
     }
 
+    // El código de barras es único: evita duplicados que romperían el escaneo
+    const barcodeTrim = barcode.trim()
+    if (barcodeTrim) {
+      const dup = products.find(
+        (p) => p.barcode && p.barcode.trim() === barcodeTrim && p.id !== product?.id,
+      )
+      if (dup) {
+        toast.error(`El código ${barcodeTrim} ya lo usa «${dup.name}»`)
+        return
+      }
+    }
+
     // La categoría (nueva o existente) queda registrada en LocalStorage
     setCategories(registerCategory(category.trim()))
 
@@ -109,6 +126,7 @@ export default function ProductFormModal({
       cost: costNum,
       stock: stockNum,
       emoji: emoji || '📦',
+      ...(barcodeTrim ? { barcode: barcodeTrim } : {}),
     })
     // Devuelve el producto guardado para que el flujo de presupuesto/venta lo agregue al carrito
     const saved = product
@@ -121,6 +139,7 @@ export default function ProductFormModal({
           cost: costNum,
           stock: stockNum,
           emoji: emoji || '📦',
+          ...(barcodeTrim ? { barcode: barcodeTrim } : { barcode: undefined }),
         }
       : useSalesStore.getState().products.find((p) => p.name === name.trim())
     if (saved) onSaved?.(saved)
@@ -211,6 +230,19 @@ export default function ProductFormModal({
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Ej. Audífonos Pro"
+                    className="w-full rounded-xl border border-white/10 bg-white/[0.05] px-3 py-2.5 text-sm text-white placeholder:text-slate-500 outline-none transition-colors focus:border-violet-400/60"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-1.5 block text-xs font-medium text-slate-400">
+                    Código de barras <span className="font-normal text-slate-600">(opcional)</span>
+                  </label>
+                  <input
+                    value={barcode}
+                    onChange={(e) => setBarcode(e.target.value)}
+                    placeholder="Ej. 7501234567890"
+                    autoComplete="off"
                     className="w-full rounded-xl border border-white/10 bg-white/[0.05] px-3 py-2.5 text-sm text-white placeholder:text-slate-500 outline-none transition-colors focus:border-violet-400/60"
                   />
                 </div>

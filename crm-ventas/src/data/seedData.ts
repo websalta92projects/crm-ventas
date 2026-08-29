@@ -11,6 +11,7 @@ export const initialProducts: Product[] = [
     cost: 1050,
     stock: 12,
     emoji: '💻',
+    barcode: '7501234560012',
   },
   {
     id: 'p2',
@@ -21,6 +22,7 @@ export const initialProducts: Product[] = [
     cost: 700,
     stock: 25,
     emoji: '📱',
+    barcode: '7501234560029',
   },
   {
     id: 'p3',
@@ -31,6 +33,7 @@ export const initialProducts: Product[] = [
     cost: 385,
     stock: 18,
     emoji: '📲',
+    barcode: '7501234560036',
   },
   {
     id: 'p4',
@@ -41,6 +44,7 @@ export const initialProducts: Product[] = [
     cost: 120,
     stock: 40,
     emoji: '🎧',
+    barcode: '7501234560043',
   },
   {
     id: 'p5',
@@ -51,6 +55,7 @@ export const initialProducts: Product[] = [
     cost: 210,
     stock: 22,
     emoji: '⌚',
+    barcode: '7501234560050',
   },
   {
     id: 'p6',
@@ -61,6 +66,7 @@ export const initialProducts: Product[] = [
     cost: 540,
     stock: 8,
     emoji: '📺',
+    barcode: '7501234560067',
   },
   {
     id: 'p7',
@@ -71,6 +77,7 @@ export const initialProducts: Product[] = [
     cost: 820,
     stock: 6,
     emoji: '📷',
+    barcode: '7501234560074',
   },
   {
     id: 'p8',
