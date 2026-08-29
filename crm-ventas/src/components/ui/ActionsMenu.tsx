@@ -26,6 +26,7 @@ const PANEL_WIDTH = 232
  */
 export default function ActionsMenu({ items, compact = false }: ActionsMenuProps) {
   const btnRef = useRef<HTMLButtonElement>(null)
+  const panelRef = useRef<HTMLDivElement>(null)
   const [open, setOpen] = useState(false)
   const [pos, setPos] = useState<{ top: number; left: number } | null>(null)
 
@@ -48,7 +49,11 @@ export default function ActionsMenu({ items, compact = false }: ActionsMenuProps
     if (!open) return
     const onPointer = (e: PointerEvent) => {
       const el = btnRef.current
-      if (el && el.contains(e.target as Node)) return
+      const panel = panelRef.current
+      const target = e.target as Node
+      // No cerrar si el clic es dentro del botón o dentro del panel del menú
+      if (el && el.contains(target)) return
+      if (panel && panel.contains(target)) return
       close()
     }
     const onKey = (e: KeyboardEvent) => {
@@ -91,6 +96,7 @@ export default function ActionsMenu({ items, compact = false }: ActionsMenuProps
           <>
             <div className="fixed inset-0 z-40" onClick={close} />
             <div
+              ref={panelRef}
               role="menu"
               className="glass-strong fixed z-50 overflow-hidden rounded-xl p-1.5 shadow-2xl shadow-black/40"
               style={{ top: pos.top, left: pos.left, width: PANEL_WIDTH }}
