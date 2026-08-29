@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import toast from 'react-hot-toast'
 import {
@@ -11,6 +11,7 @@ import {
   Pencil,
   Plus,
   Search,
+  ShoppingBag,
   Trash2,
   XCircle,
 } from 'lucide-react'
@@ -19,11 +20,12 @@ import StatusBadge from '../components/sales/StatusBadge'
 import ConfirmModal from '../components/products/ConfirmModal'
 import ActionButton from '../components/ui/ActionButton'
 import ActionsMenu, { type ActionItem } from '../components/ui/ActionsMenu'
+import DetailModal from '../components/ui/DetailModal'
 import Pagination from '../components/ui/Pagination'
 import { useMediaQuery } from '../hooks/useMediaQuery'
 import { useSalesStore } from '../store/salesStore'
 import { useConfigStore } from '../store/configStore'
-import { formatDateTime, formatDateOnly, formatMoney } from '../utils/format'
+import { formatDateTime, formatDateOnly, formatMoney, formatMoneyCompact } from '../utils/format'
 import { SALE_STATUSES, STATUS_META } from '../utils/saleStatus'
 import { saleProfit, saleTotal, saleUnits } from '../utils/sale'
 import { buildReceiptText, buildWhatsAppLink, TAX_RATE } from '../utils/budget'
@@ -51,6 +53,7 @@ export default function Sales({ initialBudgetId, onBudgetConsumed }: SalesProps)
   const [deleting, setDeleting] = useState<Sale | null>(null)
   const [canceling, setCanceling] = useState<Sale | null>(null)
   const [page, setPage] = useState(1)
+  const [detail, setDetail] = useState<Sale | null>(null)
 
   const isMobile = useMediaQuery('(max-width: 767px)')
 
@@ -144,6 +147,68 @@ export default function Sales({ initialBudgetId, onBudgetConsumed }: SalesProps)
   const handleCancel = () => {
     if (!canceling) return
     changeStatus(canceling, 'cancelado', 'Venta cancelada 🚫')
+  }
+
+  // Acciones del modal de detalle (según el estado de la venta)
+  const buildSaleDetailActions = (sale: Sale): ActionItem[] => {
+    const a: ActionItem[] = []
+    if (sale.status === 'pendiente_pago') {
+      a.push({
+        key: 'charge',
+        icon: <Banknote className="h-4 w-4 text-emerald-300" />,
+        label: 'Cobrar',
+        onClick: () => changeStatus(sale, 'pagado', 'Cobro registrado 💰'),
+      })
+    }
+    if (sale.status === 'pagado') {
+      a.push({
+        key: 'receipt',
+        icon: <FileText className="h-4 w-4 text-emerald-300" />,
+        label: 'Recibo PDF',
+        onClick: () => handleReceiptPdf(sale),
+      })
+      a.push({
+        key: 'copy',
+        icon: <ClipboardCopy className="h-4 w-4 text-slate-300" />,
+        label: 'Copiar',
+        onClick: () => copyReceipt(sale),
+      })
+      a.push({
+        key: 'wa',
+        icon: <MessageCircle className="h-4 w-4 text-green-300" />,
+        label: 'WhatsApp',
+        onClick: () => handleReceiptWhatsApp(sale),
+      })
+      a.push({
+        key: 'deliver',
+        icon: <PackageCheck className="h-4 w-4 text-sky-300" />,
+        label: 'Entregar',
+        onClick: () => changeStatus(sale, 'entregado', 'Venta marcada como Entregada 📦'),
+      })
+    }
+    a.push({
+      key: 'edit',
+      icon: <Pencil className="h-4 w-4" />,
+      label: 'Editar',
+      onClick: () => openEdit(sale),
+    })
+    if (sale.status !== 'cancelado') {
+      a.push({
+        key: 'cancel',
+        icon: <XCircle className="h-4 w-4 text-rose-300" />,
+        label: 'Cancelar',
+        danger: true,
+        onClick: () => setCanceling(sale),
+      })
+    }
+    a.push({
+      key: 'delete',
+      icon: <Trash2 className="h-4 w-4" />,
+      label: 'Eliminar',
+      danger: true,
+      onClick: () => setDeleting(sale),
+    })
+    return a
   }
 
   // Recibo PDF: usa el folio de la configuración y lo incrementa automáticamente
@@ -290,17 +355,18 @@ export default function Sales({ initialBudgetId, onBudgetConsumed }: SalesProps)
               <tr className="border-b border-white/10 bg-white/[0.02] text-xs text-slate-500">
                 <th className="px-5 py-3 font-medium">Productos</th>
                 <th className="px-4 py-3 font-medium">Cliente</th>
-                <th className="px-4 py-3 font-medium">Fecha</th>
+                <th className="hidden px-4 py-3 font-medium md:table-cell">Fecha</th>
                 <th className="px-4 py-3 font-medium">Estado</th>
                 <th className="px-4 py-3 font-medium">Cant.</th>
                 <th className="px-4 py-3 text-right font-medium">Total</th>
-                <th className="px-4 py-3 text-right font-medium">Ganancia</th>
-                {!isMobile && <th className="px-5 py-3 text-right font-medium">Acciones</th>}
+                <th className="hidden px-4 py-3 text-right font-medium md:table-cell">Ganancia</th>
+                <th className="px-5 py-3 text-right font-medium">Acciones</th>
               </tr>
             </thead>
             <tbody>
               {pageItems.map((sale) => {
                 const customer = customerById.get(sale.customerId)
+                const customerName = customer?.name ?? 'Sin cliente'
                 const units = saleUnits(sale)
                 const first = sale.items[0]
 
@@ -364,61 +430,77 @@ export default function Sales({ initialBudgetId, onBudgetConsumed }: SalesProps)
                 })
 
                 return (
-                  <Fragment key={sale.id}>
-                    <motion.tr
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ duration: 0.2 }}
-                      className="border-b border-white/5 text-slate-300 last:border-0 hover:bg-white/[0.03]"
-                    >
-                      <td className="px-5 py-3">
-                        <span className="flex items-center gap-2">
-                          <span className="text-lg">{first?.emoji ?? '📦'}</span>
-                          <span className="font-medium text-white">{first?.name ?? 'Producto'}</span>
-                          {sale.items.length > 1 && (
-                            <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-medium text-slate-300">
-                              +{sale.items.length - 1}
-                            </span>
-                          )}
+                  <motion.tr
+                    key={sale.id}
+                    onClick={() => setDetail(sale)}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.2 }}
+                    className="cursor-pointer border-b border-white/5 text-slate-300 last:border-0 hover:bg-white/[0.03]"
+                  >
+                    <td className="max-w-[40px] px-5 py-3 md:max-w-none">
+                      <span className="hidden items-center gap-2 md:flex">
+                        <span className="text-lg">{first?.emoji ?? '📦'}</span>
+                        <span className="truncate font-medium text-white">
+                          {first?.name ?? 'Producto'}
                         </span>
-                      </td>
-                      <td className="px-4 py-3">{customer?.name ?? 'Sin cliente'}</td>
-                      <td className="px-4 py-3 text-slate-400">{formatDateTime(sale.date)}</td>
-                      <td className="px-4 py-3">
-                        <StatusBadge status={sale.status} />
-                      </td>
-                      <td className="px-4 py-3">{units}</td>
-                      <td className="px-4 py-3 text-right font-semibold text-white">
+                        {sale.items.length > 1 && (
+                          <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-medium text-slate-300">
+                            +{sale.items.length - 1}
+                          </span>
+                        )}
+                      </span>
+                      <span className="flex items-center gap-1 md:hidden">
+                        <span className="text-lg">{first?.emoji ?? '📦'}</span>
+                        {sale.items.length > 1 && (
+                          <span className="rounded-full bg-white/10 px-1.5 py-0.5 text-[10px] font-medium text-slate-300">
+                            +{sale.items.length - 1}
+                          </span>
+                        )}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="hidden md:inline">{customerName}</span>
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-sky-500 text-xs font-bold text-white md:hidden">
+                        {(customerName[0] || '?').toUpperCase()}
+                      </span>
+                    </td>
+                    <td className="hidden px-4 py-3 text-slate-400 md:table-cell">
+                      {formatDateTime(sale.date)}
+                    </td>
+                    <td className="px-4 py-3">
+                      <StatusBadge status={sale.status} compact={isMobile} />
+                    </td>
+                    <td className="px-4 py-3 text-xs md:text-sm">{units}</td>
+                    <td className="px-4 py-3 text-right">
+                      <span className="hidden text-sm font-semibold text-white md:inline">
                         {formatMoney(saleTotal(sale))}
-                      </td>
-                      <td className="px-4 py-3 text-right font-semibold text-emerald-400">
-                        {formatMoney(saleProfit(sale))}
-                      </td>
-                      {!isMobile && (
-                        <td className="px-5 py-3">
-                          <div className="flex flex-wrap justify-end gap-1.5">
-                            {actions.map((a) => {
-                              const { key, ...rest } = a
-                              return <ActionButton key={key} {...rest} />
-                            })}
-                          </div>
-                        </td>
+                      </span>
+                      <span className="text-xs font-semibold text-white md:hidden">
+                        {formatMoneyCompact(saleTotal(sale))}
+                      </span>
+                    </td>
+                    <td className="hidden px-4 py-3 text-right text-xs font-semibold text-emerald-400 md:table-cell md:text-sm">
+                      {formatMoney(saleProfit(sale))}
+                    </td>
+                    <td className="px-5 py-3">
+                      {isMobile ? (
+                        <div className="flex justify-end" onClick={(e) => e.stopPropagation()}>
+                          <ActionsMenu items={actions} compact />
+                        </div>
+                      ) : (
+                        <div
+                          className="flex flex-wrap justify-end gap-1.5"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {actions.map((a) => {
+                            const { key, ...rest } = a
+                            return <ActionButton key={key} {...rest} />
+                          })}
+                        </div>
                       )}
-                    </motion.tr>
-                    {isMobile && (
-                      <motion.tr
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="border-b border-white/5 lg:hidden"
-                      >
-                        <td colSpan={8} className="px-5 py-2">
-                          <div className="flex justify-end">
-                            <ActionsMenu items={actions} />
-                          </div>
-                        </td>
-                      </motion.tr>
-                    )}
-                  </Fragment>
+                    </td>
+                  </motion.tr>
                 )
               })}
               {filtered.length === 0 && (
@@ -442,6 +524,35 @@ export default function Sales({ initialBudgetId, onBudgetConsumed }: SalesProps)
         initialBudgetId={initialBudgetId ?? undefined}
         onClose={closeModal}
       />
+
+      {/* Detalle de la venta */}
+      {detail && (
+        <DetailModal
+          open
+          title="Detalle de venta"
+          subtitle={`${STATUS_META[detail.status].label} · ${formatDateTime(detail.date)}`}
+          icon={<ShoppingBag className="h-5 w-5 text-white" />}
+          customerName={customerById.get(detail.customerId)?.name ?? 'Sin cliente'}
+          customerPhone={customerById.get(detail.customerId)?.phone ?? ''}
+          items={detail.items.map((i) => ({
+            name: i.name,
+            emoji: i.emoji,
+            quantity: i.quantity,
+            unitPrice: i.unitPrice,
+          }))}
+          status={<StatusBadge status={detail.status} />}
+          lines={[
+            {
+              label: `Subtotal (${saleUnits(detail)} artículos)`,
+              value: formatMoney(saleTotal(detail)),
+            },
+            { label: 'Ganancia', value: formatMoney(saleProfit(detail)), accent: true },
+            { label: 'Total', value: formatMoney(saleTotal(detail)), strong: true },
+          ]}
+          actions={buildSaleDetailActions(detail)}
+          onClose={() => setDetail(null)}
+        />
+      )}
 
       {/* Confirmación de eliminación */}
       <ConfirmModal

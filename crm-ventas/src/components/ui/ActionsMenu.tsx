@@ -13,6 +13,8 @@ export interface ActionItem {
 
 interface ActionsMenuProps {
   items: ActionItem[]
+  /** Modo compacto: muestra solo el icono ⚙️ (sin el texto "Acciones"). */
+  compact?: boolean
 }
 
 const PANEL_WIDTH = 232
@@ -22,7 +24,7 @@ const PANEL_WIDTH = 232
  * Se renderiza en un portal para no ser recortado por el overflow de la tabla.
  * Cierra con clic fuera, Escape, scroll o resize.
  */
-export default function ActionsMenu({ items }: ActionsMenuProps) {
+export default function ActionsMenu({ items, compact = false }: ActionsMenuProps) {
   const btnRef = useRef<HTMLButtonElement>(null)
   const [open, setOpen] = useState(false)
   const [pos, setPos] = useState<{ top: number; left: number } | null>(null)
@@ -75,10 +77,12 @@ export default function ActionsMenu({ items }: ActionsMenuProps) {
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={toggle}
-        className="glass glass-hover flex min-h-[44px] min-w-[44px] items-center gap-1.5 rounded-xl px-3 text-xs font-medium text-slate-200 transition-all active:scale-95"
+        className={`glass glass-hover flex min-h-[44px] min-w-[44px] items-center gap-1.5 rounded-xl text-xs font-medium text-slate-200 transition-all active:scale-95 ${
+          compact ? 'justify-center px-0' : 'px-3'
+        }`}
       >
         <Settings2 className="h-4 w-4" />
-        <span>Acciones</span>
+        {!compact && <span>Acciones</span>}
       </button>
 
       {open &&

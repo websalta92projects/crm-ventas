@@ -19,6 +19,11 @@ export function formatMoney(value: number): string {
   return moneyFormatter.format(value)
 }
 
+// Formato compacto para tablas móviles: "$3,686" (sin "USD" ni decimales)
+export function formatMoneyCompact(value: number): string {
+  return `$${Math.round(value).toLocaleString(LOCALE)}`
+}
+
 export function formatCompact(value: number): string {
   return compactFormatter.format(value)
 }

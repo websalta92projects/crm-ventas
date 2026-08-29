@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import toast from 'react-hot-toast'
 import {
@@ -18,13 +18,14 @@ import StatusBadge from '../components/sales/StatusBadge'
 import ConfirmModal from '../components/products/ConfirmModal'
 import ActionButton from '../components/ui/ActionButton'
 import ActionsMenu, { type ActionItem } from '../components/ui/ActionsMenu'
+import DetailModal from '../components/ui/DetailModal'
 import Pagination from '../components/ui/Pagination'
 import { useMediaQuery } from '../hooks/useMediaQuery'
 import { useSalesStore } from '../store/salesStore'
 import { useConfigStore } from '../store/configStore'
-import { formatDateOnly, formatMoney } from '../utils/format'
+import { formatDateOnly, formatMoney, formatMoneyCompact } from '../utils/format'
 import { BUDGET_STATUSES, BUDGET_STATUS_META } from '../utils/budgetStatus'
-import { buildBudgetText, buildWhatsAppLink } from '../utils/budget'
+import { buildBudgetText, buildWhatsAppLink, TAX_RATE } from '../utils/budget'
 import { generateBudgetPDF } from '../utils/documentPDF'
 import type { Budget, BudgetStatus } from '../types'
 
@@ -44,6 +45,7 @@ export default function Budgets({ onCreateSale }: BudgetsProps) {
   const [deleting, setDeleting] = useState<Budget | null>(null)
   const [rejecting, setRejecting] = useState<Budget | null>(null)
   const [page, setPage] = useState(1)
+  const [detail, setDetail] = useState<Budget | null>(null)
 
   const isMobile = useMediaQuery('(max-width: 767px)')
 
@@ -157,6 +159,67 @@ export default function Budgets({ onCreateSale }: BudgetsProps) {
     changeStatus(rejecting, 'rechazado', 'Presupuesto rechazado')
   }
 
+  // Acciones del modal de detalle (según el estado del presupuesto)
+  const buildDetailActions = (b: Budget): ActionItem[] => {
+    const a: ActionItem[] = [
+      {
+        key: 'pdf',
+        icon: <FileText className="h-4 w-4 text-emerald-300" />,
+        label: 'PDF',
+        onClick: () => handlePdf(b),
+      },
+      {
+        key: 'wa',
+        icon: <MessageCircle className="h-4 w-4 text-green-300" />,
+        label: 'WhatsApp',
+        onClick: () => whatsappBudget(b),
+      },
+      {
+        key: 'copy',
+        icon: <ClipboardCopy className="h-4 w-4" />,
+        label: 'Copiar',
+        onClick: () => copyBudget(b),
+      },
+    ]
+    if (b.status === 'enviado') {
+      a.push({
+        key: 'accept',
+        icon: <CheckCheck className="h-4 w-4 text-emerald-300" />,
+        label: 'Aceptar',
+        onClick: () => changeStatus(b, 'aceptado', 'Presupuesto aceptado 🎉'),
+      })
+      a.push({
+        key: 'reject',
+        icon: <XCircle className="h-4 w-4 text-rose-300" />,
+        label: 'Rechazar',
+        danger: true,
+        onClick: () => setRejecting(b),
+      })
+    }
+    if (b.status === 'aceptado' && onCreateSale && !b.hasSale) {
+      a.push({
+        key: 'sell',
+        icon: <ShoppingCart className="h-4 w-4 text-sky-300" />,
+        label: 'Vender',
+        onClick: () => onCreateSale(b.id),
+      })
+    }
+    a.push({
+      key: 'edit',
+      icon: <Pencil className="h-4 w-4" />,
+      label: 'Editar',
+      onClick: () => openEdit(b),
+    })
+    a.push({
+      key: 'delete',
+      icon: <Trash2 className="h-4 w-4" />,
+      label: 'Eliminar',
+      danger: true,
+      onClick: () => setDeleting(b),
+    })
+    return a
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -207,12 +270,13 @@ export default function Budgets({ onCreateSale }: BudgetsProps) {
                 <th className="px-4 py-3 font-medium">Productos</th>
                 <th className="px-4 py-3 text-right font-medium">Total</th>
                 <th className="px-4 py-3 font-medium">Estado</th>
-                <th className="px-4 py-3 font-medium">Fecha</th>
-                {!isMobile && <th className="px-5 py-3 text-right font-medium">Acciones</th>}
+                <th className="hidden px-4 py-3 font-medium md:table-cell">Fecha</th>
+                <th className="px-5 py-3 text-right font-medium">Acciones</th>
               </tr>
             </thead>
             <tbody>
               {pageItems.map((b) => {
+                const customerName = customerById.get(b.customerId)?.name ?? 'Sin cliente'
                 // Acciones disponibles según el estado del presupuesto
                 const actions: ActionItem[] = []
                 actions.push({
@@ -307,57 +371,68 @@ export default function Budgets({ onCreateSale }: BudgetsProps) {
                 })
 
                 return (
-                  <Fragment key={b.id}>
-                    <motion.tr
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ duration: 0.2 }}
-                      className="border-b border-white/5 text-slate-300 last:border-0 hover:bg-white/[0.03]"
-                    >
-                      <td className="px-5 py-3">
-                        <span className="font-semibold text-white">#{b.number}</span>
-                      </td>
-                      <td className="px-4 py-3">
-                        {customerById.get(b.customerId)?.name ?? 'Sin cliente'}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className="flex items-center gap-1.5">
-                          <span className="text-lg">{b.items[0]?.emoji ?? '📄'}</span>
+                  <motion.tr
+                    key={b.id}
+                    onClick={() => setDetail(b)}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.2 }}
+                    className="cursor-pointer border-b border-white/5 text-slate-300 last:border-0 hover:bg-white/[0.03]"
+                  >
+                    <td className="px-5 py-3">
+                      <span className="text-xs font-semibold text-white md:text-sm">
+                        #{b.number}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="hidden items-center md:flex">{customerName}</span>
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-sky-500 text-xs font-bold text-white md:hidden">
+                        {(customerName[0] || '?').toUpperCase()}
+                      </span>
+                    </td>
+                    <td className="max-w-[40px] px-4 py-3 md:max-w-none">
+                      <span className="hidden items-center gap-1.5 md:flex">
+                        <span className="text-lg">{b.items[0]?.emoji ?? '📄'}</span>
+                        <span className="text-sm">
                           {b.items.length} ítem{b.items.length === 1 ? '' : 's'}
                         </span>
-                      </td>
-                      <td className="px-4 py-3 text-right font-semibold text-white">
+                      </span>
+                      <span className="text-xs font-semibold text-white md:hidden">
+                        {b.items.length}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <span className="hidden text-sm font-semibold text-white md:inline">
                         {formatMoney(b.total)}
-                      </td>
-                      <td className="px-4 py-3">
-                        <StatusBadge status={b.status} />
-                      </td>
-                      <td className="px-4 py-3 text-slate-400">{formatDateOnly(b.updatedAt)}</td>
-                      {!isMobile && (
-                        <td className="px-5 py-3">
-                          <div className="flex flex-wrap justify-end gap-1.5">
-                            {actions.map((a) => {
-                              const { key, ...rest } = a
-                              return <ActionButton key={key} {...rest} />
-                            })}
-                          </div>
-                        </td>
+                      </span>
+                      <span className="text-xs font-semibold text-white md:hidden">
+                        {formatMoneyCompact(b.total)}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <StatusBadge status={b.status} compact={isMobile} />
+                    </td>
+                    <td className="hidden px-4 py-3 text-slate-400 md:table-cell">
+                      {formatDateOnly(b.updatedAt)}
+                    </td>
+                    <td className="px-5 py-3">
+                      {isMobile ? (
+                        <div className="flex justify-end" onClick={(e) => e.stopPropagation()}>
+                          <ActionsMenu items={actions} compact />
+                        </div>
+                      ) : (
+                        <div
+                          className="flex flex-wrap justify-end gap-1.5"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {actions.map((a) => {
+                            const { key, ...rest } = a
+                            return <ActionButton key={key} {...rest} />
+                          })}
+                        </div>
                       )}
-                    </motion.tr>
-                    {isMobile && (
-                      <motion.tr
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="border-b border-white/5 lg:hidden"
-                      >
-                        <td colSpan={7} className="px-5 py-2">
-                          <div className="flex justify-end">
-                            <ActionsMenu items={actions} />
-                          </div>
-                        </td>
-                      </motion.tr>
-                    )}
-                  </Fragment>
+                    </td>
+                  </motion.tr>
                 );
               })}
               {filtered.length === 0 && (
@@ -375,6 +450,35 @@ export default function Budgets({ onCreateSale }: BudgetsProps) {
       <Pagination page={safePage} totalPages={totalPages} onPageChange={setPage} />
 
       <BudgetFormModal open={formOpen} budget={editing} onClose={() => setFormOpen(false)} />
+
+      {/* Detalle del presupuesto */}
+      {detail && (
+        <DetailModal
+          open
+          title={`Presupuesto #${detail.number}`}
+          subtitle={`${BUDGET_STATUS_META[detail.status].label} · ${formatDateOnly(detail.createdAt)}`}
+          icon={<FileText className="h-5 w-5 text-white" />}
+          customerName={customerById.get(detail.customerId)?.name ?? 'Sin cliente'}
+          customerPhone={customerById.get(detail.customerId)?.phone ?? ''}
+          items={detail.items.map((i) => ({
+            name: i.name,
+            emoji: i.emoji,
+            quantity: i.quantity,
+            unitPrice: i.unitPrice,
+          }))}
+          status={<StatusBadge status={detail.status} />}
+          lines={[
+            { label: 'Subtotal', value: formatMoney(detail.subtotal) },
+            {
+              label: `Impuestos (${Math.round(TAX_RATE * 100)}%)`,
+              value: formatMoney(detail.tax),
+            },
+            { label: 'Total', value: formatMoney(detail.total), strong: true },
+          ]}
+          actions={buildDetailActions(detail)}
+          onClose={() => setDetail(null)}
+        />
+      )}
 
       <ConfirmModal
         open={deleting !== null}
