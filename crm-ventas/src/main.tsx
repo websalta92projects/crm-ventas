@@ -3,6 +3,10 @@ import ReactDOM from 'react-dom/client'
 import { Toaster } from 'react-hot-toast'
 import App from './App'
 import './index.css'
+import { applyTheme, getStoredTheme } from './utils/theme'
+
+// Aplica el tema guardado ANTES del primer render (evita parpadeo)
+applyTheme(getStoredTheme())
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
@@ -11,9 +15,9 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
       position="top-right"
       toastOptions={{
         style: {
-          background: 'rgba(15, 23, 42, 0.92)',
-          color: '#e2e8f0',
-          border: '1px solid rgba(255, 255, 255, 0.12)',
+          background: 'var(--toast-bg)',
+          color: 'var(--text-primary)',
+          border: '1px solid var(--toast-border)',
           backdropFilter: 'blur(12px)',
           borderRadius: '12px',
           fontSize: '14px',

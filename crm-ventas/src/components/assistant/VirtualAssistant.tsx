@@ -32,7 +32,7 @@ export default function VirtualAssistant() {
             transition={{ type: 'spring', stiffness: 320, damping: 26 }}
             className="glass-strong fixed bottom-24 right-4 z-50 w-[calc(100vw-2rem)] max-w-sm overflow-hidden md:right-6"
           >
-            <div className="flex items-center gap-3 border-b border-white/10 bg-gradient-to-r from-violet-500/15 to-sky-500/15 px-5 py-4">
+            <div className="flex items-center gap-3 border-b border-app bg-gradient-to-r from-violet-500/15 to-sky-500/15 px-5 py-4">
               <div className="relative">
                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-sky-500 shadow-lg shadow-violet-500/30">
                   <Bot className="h-5 w-5 text-white" />
@@ -41,11 +41,11 @@ export default function VirtualAssistant() {
               </div>
               <div className="flex-1">
                 <p className="text-sm font-semibold text-white">Asistente Virtual</p>
-                <p className="text-[11px] text-slate-400">En línea · Motivación diaria</p>
+                <p className="text-[11px] text-secondary">En línea · Motivación diaria</p>
               </div>
               <button
                 onClick={() => setOpen(false)}
-                className="rounded-lg p-1 text-slate-400 hover:bg-white/10 hover:text-white"
+                className="rounded-lg p-1 text-secondary hover:bg-card hover:text-primary"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -59,7 +59,7 @@ export default function VirtualAssistant() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
                   transition={{ duration: 0.3 }}
-                  className="rounded-xl border border-white/10 bg-white/[0.04] p-4 text-sm leading-relaxed text-slate-200"
+                  className="rounded-xl border border-app bg-card p-4 text-sm leading-relaxed text-primary"
                 >
                   {motivationalMessages[index]}
                 </motion.div>
@@ -72,7 +72,7 @@ export default function VirtualAssistant() {
                 <Sparkles className="h-4 w-4" />
                 Nueva frase motivadora
               </button>
-              <p className="mt-3 text-center text-[11px] text-slate-500">
+              <p className="mt-3 text-center text-[11px] text-muted">
                 Cambia automáticamente cada {ROTATION_MS / 1000} segundos
               </p>
             </div>

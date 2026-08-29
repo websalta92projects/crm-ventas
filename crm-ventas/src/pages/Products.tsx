@@ -98,21 +98,21 @@ export default function Products() {
       {/* Barra de herramientas */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="glass flex min-w-[200px] flex-1 items-center gap-2 rounded-xl px-3 py-2">
-          <Search className="h-4 w-4 shrink-0 text-slate-500" />
+          <Search className="h-4 w-4 shrink-0 text-muted" />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Buscar por nombre…"
-            className="w-full bg-transparent text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none"
+            className="w-full bg-transparent text-sm text-primary placeholder:text-muted focus:outline-none"
           />
         </div>
 
         <div className="glass flex items-center gap-2 rounded-xl px-3 py-2">
-          <Filter className="h-4 w-4 shrink-0 text-slate-500" />
+          <Filter className="h-4 w-4 shrink-0 text-muted" />
           <select
             value={category}
             onChange={(e) => setCategory(e.target.value)}
-            className="bg-transparent text-sm text-slate-200 focus:outline-none [&>option]:bg-slate-900"
+            className="bg-transparent text-sm text-primary focus:outline-none [&>option]:bg-panel"
           >
             <option value="all">Todas las categorías</option>
             {categories.map((c) => (
@@ -128,7 +128,7 @@ export default function Products() {
           title="Restaurar datos demo"
           className="glass glass-hover flex h-10 w-10 items-center justify-center"
         >
-          <RotateCcw className="h-4 w-4 text-slate-300" />
+          <RotateCcw className="h-4 w-4 text-secondary" />
         </button>
 
         <button
@@ -140,7 +140,7 @@ export default function Products() {
         </button>
       </div>
 
-      <p className="text-xs text-slate-500">
+      <p className="text-xs text-muted">
         {filtered.length} de {products.length} productos
         {category !== 'all' && ` en «${category}»`}
         {query.trim() && ` · buscando «${query.trim()}»`}
@@ -163,8 +163,8 @@ export default function Products() {
         </motion.div>
       ) : (
         <div className="glass flex flex-col items-center justify-center gap-3 py-16 text-center">
-          <PackageSearch className="h-10 w-10 text-slate-500" />
-          <p className="text-sm text-slate-400">No hay productos que coincidan con tu búsqueda.</p>
+          <PackageSearch className="h-10 w-10 text-muted" />
+          <p className="text-sm text-secondary">No hay productos que coincidan con tu búsqueda.</p>
           <button
             onClick={openCreate}
             className="text-sm font-semibold text-sky-400 hover:text-sky-300"

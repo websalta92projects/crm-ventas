@@ -1,13 +1,14 @@
 import { useRef, useState, type ChangeEvent, type ReactNode } from 'react'
 import { motion } from 'framer-motion'
 import toast from 'react-hot-toast'
-import { AlertTriangle, Building2, FileText, ImageUp, RotateCcw, Save } from 'lucide-react'
+import { AlertTriangle, Building2, FileText, ImageUp, Moon, RotateCcw, Save, Sun } from 'lucide-react'
 import { useConfigStore } from '../store/configStore'
 import { useSalesStore } from '../store/salesStore'
 import ConfirmModal from '../components/products/ConfirmModal'
+import { useTheme } from '../hooks/useTheme'
 
 const inputClass =
-  'w-full rounded-xl border border-white/10 bg-white/[0.05] px-3 py-2.5 text-sm text-white placeholder:text-slate-500 outline-none transition-colors focus:border-violet-400/60'
+  'w-full rounded-xl border border-app bg-card px-3 py-2.5 text-sm text-white placeholder:text-muted outline-none transition-colors focus:border-violet-400/60'
 
 export default function Settings() {
   const config = useConfigStore((s) => s.config)
@@ -16,6 +17,8 @@ export default function Settings() {
   const fileRef = useRef<HTMLInputElement>(null)
   const clearAllData = useSalesStore((s) => s.clearAllData)
   const [resetOpen, setResetOpen] = useState(false)
+  // Tema claro/oscuro persistido en LocalStorage (clave 'theme')
+  const [theme, toggleTheme] = useTheme()
 
   // Reseteo total: deja el CRM vacío, borra configuración y categorías, y recarga la página
   const handleResetAll = () => {
@@ -54,7 +57,7 @@ export default function Settings() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-lg font-bold text-white">Configuración de la empresa</h2>
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-secondary">
             Estos datos se usan en los PDF de presupuestos y recibos
           </p>
         </div>
@@ -64,7 +67,7 @@ export default function Settings() {
               resetConfig()
               toast.success('Configuración restaurada 🔄')
             }}
-            className="glass glass-hover flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-medium text-slate-300"
+            className="glass glass-hover flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-medium text-secondary"
           >
             <RotateCcw className="h-4 w-4" />
             Restaurar
@@ -79,6 +82,42 @@ export default function Settings() {
         </div>
       </div>
 
+      {/* Aspecto: modo claro / oscuro */}
+      <section className="glass glass-hover p-5 md:p-6">
+        <header className="mb-4 flex items-center gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-500/15 text-violet-300">
+            {theme === 'dark' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+          </div>
+          <div>
+            <h3 className="text-sm font-semibold text-primary">Aspecto</h3>
+            <p className="text-[11px] text-secondary">
+              Cambia entre modo oscuro y claro para toda la aplicación
+            </p>
+          </div>
+        </header>
+
+        <button
+          type="button"
+          onClick={toggleTheme}
+          className="flex w-full items-center justify-between gap-3 rounded-xl border border-app bg-card px-4 py-3 text-sm transition-all hover:bg-card active:scale-[0.99]"
+          aria-label="Cambiar tema claro/oscuro"
+        >
+          <span className="flex items-center gap-3">
+            <span className="text-xl">{theme === 'dark' ? '🌙' : '☀️'}</span>
+            <span className="font-semibold text-primary">
+              {theme === 'dark' ? 'Oscuro' : 'Claro'}
+            </span>
+          </span>
+          <span className="relative inline-flex h-6 w-11 shrink-0 items-center rounded-full bg-gradient-to-r from-violet-500 to-sky-500 transition-colors">
+            <span
+              className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${
+                theme === 'dark' ? 'translate-x-0.5' : 'translate-x-5'
+              }`}
+            />
+          </span>
+        </button>
+      </section>
+
       {/* Empresa */}
       <section className="glass glass-hover p-5 md:p-6">
         <header className="mb-4 flex items-center gap-3">
@@ -87,7 +126,7 @@ export default function Settings() {
           </div>
           <div>
             <h3 className="text-sm font-semibold text-white">Datos de la empresa</h3>
-            <p className="text-[11px] text-slate-500">
+            <p className="text-[11px] text-muted">
               Aparecen en el encabezado de los documentos
             </p>
           </div>
@@ -95,17 +134,17 @@ export default function Settings() {
 
         {/* Logo */}
         <div className="mb-4 flex items-center gap-4">
-          <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-white/[0.05]">
+          <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-app bg-card">
             {config.logo ? (
               <img src={config.logo} alt="Logo" className="h-full w-full object-contain" />
             ) : (
-              <Building2 className="h-7 w-7 text-slate-500" />
+              <Building2 className="h-7 w-7 text-muted" />
             )}
           </div>
           <div>
             <button
               onClick={() => fileRef.current?.click()}
-              className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.05] px-3 py-2 text-xs font-medium text-slate-200 hover:bg-white/[0.1]"
+              className="flex items-center gap-2 rounded-xl border border-app bg-card px-3 py-2 text-xs font-medium text-primary hover:bg-card"
             >
               <ImageUp className="h-4 w-4" />
               Cargar logo
@@ -169,7 +208,7 @@ export default function Settings() {
                 placeholder="Ej. Ventas inteligentes"
                 className={inputClass}
               />
-              <p className="mt-1 text-[11px] text-slate-500">
+              <p className="mt-1 text-[11px] text-muted">
                 Se muestra debajo del nombre en el menú lateral.
               </p>
             </Field>
@@ -185,7 +224,7 @@ export default function Settings() {
           </div>
           <div>
             <h3 className="text-sm font-semibold text-white">Documentos y folios</h3>
-            <p className="text-[11px] text-slate-500">
+            <p className="text-[11px] text-muted">
               Los contadores se incrementan automáticamente con cada documento
             </p>
           </div>
@@ -198,9 +237,9 @@ export default function Settings() {
                 type="color"
                 value={config.color}
                 onChange={(e) => updateConfig({ color: e.target.value })}
-                className="h-9 w-12 cursor-pointer rounded-lg border border-white/10 bg-transparent"
+                className="h-9 w-12 cursor-pointer rounded-lg border border-app bg-transparent"
               />
-              <span className="text-xs text-slate-400">{config.color}</span>
+              <span className="text-xs text-secondary">{config.color}</span>
             </div>
           </Field>
           <Field label="Número de inicio presupuestos">
@@ -236,7 +275,7 @@ export default function Settings() {
               placeholder="Ej. ¡Gracias por confiar en nosotros! o ElectroTech - Calidad y confianza"
               className={`${inputClass} resize-none`}
             />
-            <p className="mt-1 text-[11px] text-slate-500">
+            <p className="mt-1 text-[11px] text-muted">
               Aparece al final de presupuestos y recibos. Si lo dejas vacío, se usará «Generado con
               ElectroCRM».
             </p>
@@ -245,10 +284,10 @@ export default function Settings() {
 
         {/* Vista previa */}
         <div className="mt-5">
-          <p className="mb-2 text-[11px] uppercase tracking-wide text-slate-500">Vista previa</p>
-          <div className="overflow-hidden rounded-xl border border-white/10">
+          <p className="mb-2 text-[11px] uppercase tracking-wide text-muted">Vista previa</p>
+          <div className="overflow-hidden rounded-xl border border-app">
             <div
-              className="flex items-center gap-3 px-4 py-3"
+              className="doc-preview flex items-center gap-3 px-4 py-3"
               style={{ backgroundColor: config.color }}
             >
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/90 text-sm font-bold">
@@ -264,7 +303,7 @@ export default function Settings() {
                 PRESUPUESTO #{config.budgetCounter}
               </p>
             </div>
-            <div className="flex items-center justify-between px-4 py-2 text-[11px] text-slate-400">
+            <div className="flex items-center justify-between px-4 py-2 text-[11px] text-secondary">
               <span>Cliente: … · Fecha: …</span>
               <span>{config.footer || 'Pie de página'}</span>
             </div>
@@ -280,14 +319,14 @@ export default function Settings() {
           </div>
           <div>
             <h3 className="text-sm font-semibold text-rose-300">Zona de peligro</h3>
-            <p className="text-[11px] text-slate-400">Estas acciones no se pueden deshacer</p>
+            <p className="text-[11px] text-secondary">Estas acciones no se pueden deshacer</p>
           </div>
         </header>
 
         <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
           <div>
-            <p className="text-sm font-medium text-slate-200">Resetear todos los datos</p>
-            <p className="text-xs text-slate-400">
+            <p className="text-sm font-medium text-primary">Resetear todos los datos</p>
+            <p className="text-xs text-secondary">
               Elimina productos, clientes, presupuestos, ventas y configuración.
             </p>
           </div>
@@ -316,7 +355,7 @@ export default function Settings() {
 function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
     <label className="block">
-      <span className="mb-1.5 block text-xs font-medium text-slate-400">{label}</span>
+      <span className="mb-1.5 block text-xs font-medium text-secondary">{label}</span>
       {children}
     </label>
   )

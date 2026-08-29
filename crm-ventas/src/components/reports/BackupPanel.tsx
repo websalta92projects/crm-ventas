@@ -69,7 +69,7 @@ export default function BackupPanel({
       <header className="mb-4 flex items-center justify-between">
         <div>
           <h3 className="text-base font-semibold text-white">Exportación y respaldo</h3>
-          <p className="text-xs text-slate-400">CSV, PDF y respaldo JSON de tus datos</p>
+          <p className="text-xs text-secondary">CSV, PDF y respaldo JSON de tus datos</p>
         </div>
         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-500/15 text-violet-300">
           <Database className="h-5 w-5" />
@@ -78,8 +78,8 @@ export default function BackupPanel({
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         {/* CSV */}
-        <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
-          <div className="mb-3 flex items-center gap-2 text-sm font-medium text-slate-300">
+        <div className="rounded-xl border border-app bg-card p-4">
+          <div className="mb-3 flex items-center gap-2 text-sm font-medium text-secondary">
             <FileSpreadsheet className="h-4 w-4 text-emerald-400" />
             CSV (Excel)
           </div>
@@ -92,20 +92,20 @@ export default function BackupPanel({
         </div>
 
         {/* PDF */}
-        <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
-          <div className="mb-3 flex items-center gap-2 text-sm font-medium text-slate-300">
+        <div className="rounded-xl border border-app bg-card p-4">
+          <div className="mb-3 flex items-center gap-2 text-sm font-medium text-secondary">
             <FileText className="h-4 w-4 text-rose-400" />
             PDF
           </div>
           <ActionButton label="Resumen ejecutivo" onClick={handlePdf} primary />
-          <p className="mt-2 text-[11px] leading-relaxed text-slate-500">
+          <p className="mt-2 text-[11px] leading-relaxed text-muted">
             Indicadores del período, top productos, top clientes y stock bajo.
           </p>
         </div>
 
         {/* JSON */}
-        <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
-          <div className="mb-3 flex items-center gap-2 text-sm font-medium text-slate-300">
+        <div className="rounded-xl border border-app bg-card p-4">
+          <div className="mb-3 flex items-center gap-2 text-sm font-medium text-secondary">
             <FileDown className="h-4 w-4 text-sky-400" />
             Respaldo JSON
           </div>
@@ -124,7 +124,7 @@ export default function BackupPanel({
               onClick={() => fileRef.current?.click()}
             />
           </div>
-          <p className="mt-2 text-[11px] leading-relaxed text-slate-500">
+          <p className="mt-2 text-[11px] leading-relaxed text-muted">
             El respaldo incluye productos, ventas y clientes. Al importar se reemplaza todo.
           </p>
           <input
@@ -157,7 +157,7 @@ function ActionButton({
       className={`flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold transition-all active:scale-95 ${
         primary
           ? 'bg-gradient-to-r from-rose-500 to-red-600 text-white shadow-lg shadow-rose-500/25 hover:brightness-110'
-          : 'border border-white/10 bg-white/[0.05] text-slate-300 hover:border-white/20 hover:bg-white/[0.1]'
+          : 'border border-app bg-card text-secondary hover:border-app hover:bg-card'
       }`}
     >
       {icon}

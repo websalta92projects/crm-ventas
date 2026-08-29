@@ -17,12 +17,12 @@ function PieTooltip({ active, payload }: PieTooltipProps) {
   if (!active || !payload || payload.length === 0) return null
   const data = payload[0].payload
   return (
-    <div className="z-50 rounded-lg border border-white/10 bg-gray-800/90 p-2 text-sm shadow-xl backdrop-blur-md">
+    <div className="z-50 rounded-lg border border-app bg-gray-800/90 p-2 text-sm shadow-xl backdrop-blur-md">
       <p className="font-bold text-white">{data.name}</p>
-      <p className="mt-1 text-slate-300">
+      <p className="mt-1 text-secondary">
         Vendidos: <span className="font-semibold text-white">{data.value} u.</span>
       </p>
-      <p className="text-slate-300">
+      <p className="text-secondary">
         Total: <span className="font-semibold text-white">{formatMoney(data.revenue)}</span>
       </p>
     </div>
@@ -51,7 +51,7 @@ export default function TopProductsChart() {
       <header className="mb-4 flex items-center justify-between">
         <div>
           <h3 className="text-base font-semibold text-white">Top productos</h3>
-          <p className="text-xs text-slate-400">Más vendidos · 30 días</p>
+          <p className="text-xs text-secondary">Más vendidos · 30 días</p>
         </div>
         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/15 text-amber-300">
           <Trophy className="h-5 w-5" />
@@ -84,7 +84,7 @@ export default function TopProductsChart() {
         </ResponsiveContainer>
         <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
           <p className="text-2xl font-bold text-white">{totalUnits}</p>
-          <p className="text-[11px] text-slate-400">unidades</p>
+          <p className="text-[11px] text-secondary">unidades</p>
         </div>
       </div>
 
@@ -95,14 +95,14 @@ export default function TopProductsChart() {
               className="h-2.5 w-2.5 shrink-0 rounded-full"
               style={{ backgroundColor: COLORS[index % COLORS.length] }}
             />
-            <span className="flex-1 truncate text-slate-300">
+            <span className="flex-1 truncate text-secondary">
               {tp.product.emoji} {tp.product.name}
             </span>
             <span className="font-semibold text-white">{tp.quantity} u.</span>
           </li>
         ))}
         {topProducts.length === 0 && (
-          <li className="text-sm text-slate-500">Sin ventas en el período.</li>
+          <li className="text-sm text-muted">Sin ventas en el período.</li>
         )}
       </ul>
     </section>

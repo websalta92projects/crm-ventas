@@ -5,7 +5,7 @@
 
 export default function Background() {
   return (
-    <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden bg-slate-950">
+    <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden bg-app">
       {/* Blob 1 (animación desactivada)
       <motion.div
         className="absolute -left-40 -top-40 h-[500px] w-[500px] rounded-full bg-violet-600/25 blur-[120px]"

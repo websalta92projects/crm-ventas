@@ -28,7 +28,7 @@ export default function KpiCard({
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-sm font-medium text-slate-400">{title}</p>
+          <p className="text-sm font-medium text-secondary">{title}</p>
           <p className="mt-2 truncate text-2xl font-bold tracking-tight text-white" title={value}>
             {value}
           </p>
@@ -39,7 +39,7 @@ export default function KpiCard({
           <Icon className="h-5 w-5 text-white" />
         </div>
       </div>
-      <p className="mt-3 text-xs text-slate-400">{subtitle}</p>
+      <p className="mt-3 text-xs text-secondary">{subtitle}</p>
     </motion.div>
   )
 }

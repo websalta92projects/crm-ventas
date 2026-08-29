@@ -27,7 +27,7 @@ export default function SalesByCustomerChart({
       <header className="mb-5 flex items-center justify-between">
         <div>
           <h3 className="text-base font-semibold text-white">Ventas por cliente</h3>
-          <p className="text-xs text-slate-400">Ingresos por cliente (top 6)</p>
+          <p className="text-xs text-secondary">Ingresos por cliente (top 6)</p>
         </div>
         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-500/15 text-sky-300">
           <Users className="h-5 w-5" />
@@ -37,10 +37,10 @@ export default function SalesByCustomerChart({
       <div className="h-[200px] w-full sm:h-64">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} layout="vertical" margin={{ top: 5, right: 16, left: 0, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" horizontal={false} />
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" horizontal={false} />
             <XAxis
               type="number"
-              tick={{ fill: '#64748b', fontSize: 11 }}
+              tick={{ fill: 'var(--text-muted)', fontSize: 11 }}
               tickLine={false}
               axisLine={false}
               tickFormatter={(value: number) => formatCompact(value)}
@@ -49,9 +49,9 @@ export default function SalesByCustomerChart({
               type="category"
               dataKey="name"
               width={130}
-              tick={{ fill: '#94a3b8', fontSize: 11 }}
+              tick={{ fill: 'var(--text-secondary)', fontSize: 11 }}
               tickLine={false}
-              axisLine={{ stroke: 'rgba(255,255,255,0.08)' }}
+              axisLine={{ stroke: 'var(--border-color)' }}
             />
             <Tooltip
               contentStyle={{

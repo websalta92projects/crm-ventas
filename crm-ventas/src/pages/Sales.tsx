@@ -169,7 +169,7 @@ export default function Sales({ initialBudgetId, onBudgetConsumed }: SalesProps)
       })
       a.push({
         key: 'copy',
-        icon: <ClipboardCopy className="h-4 w-4 text-slate-300" />,
+        icon: <ClipboardCopy className="h-4 w-4 text-secondary" />,
         label: 'Copiar',
         onClick: () => copyReceipt(sale),
       })
@@ -295,12 +295,12 @@ export default function Sales({ initialBudgetId, onBudgetConsumed }: SalesProps)
       {/* Barra de herramientas */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="glass flex min-w-[200px] flex-1 items-center gap-2 rounded-xl px-3 py-2">
-          <Search className="h-4 w-4 shrink-0 text-slate-500" />
+          <Search className="h-4 w-4 shrink-0 text-muted" />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Buscar por producto…"
-            className="w-full bg-transparent text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none"
+            className="w-full bg-transparent text-sm text-primary placeholder:text-muted focus:outline-none"
           />
         </div>
 
@@ -308,7 +308,7 @@ export default function Sales({ initialBudgetId, onBudgetConsumed }: SalesProps)
           <select
             value={status}
             onChange={(e) => setStatus(e.target.value as 'all' | SaleStatus)}
-            className="bg-transparent text-sm text-slate-200 focus:outline-none [&>option]:bg-slate-900"
+            className="bg-transparent text-sm text-primary focus:outline-none [&>option]:bg-panel"
           >
             <option value="all">Todos los estados</option>
             {SALE_STATUSES.map((s) => (
@@ -320,26 +320,26 @@ export default function Sales({ initialBudgetId, onBudgetConsumed }: SalesProps)
         </div>
 
         <div className="glass flex items-center gap-2 rounded-xl px-3 py-2">
-          <CalendarRange className="h-4 w-4 shrink-0 text-slate-500" />
+          <CalendarRange className="h-4 w-4 shrink-0 text-muted" />
           <input
             type="date"
             value={fromDate}
             onChange={(e) => setFromDate(e.target.value)}
-            className="bg-transparent text-sm text-slate-200 focus:outline-none [color-scheme:dark]"
+            className="bg-transparent text-sm text-primary focus:outline-none [color-scheme:dark]"
           />
-          <span className="text-slate-500">→</span>
+          <span className="text-muted">→</span>
           <input
             type="date"
             value={toDate}
             onChange={(e) => setToDate(e.target.value)}
-            className="bg-transparent text-sm text-slate-200 focus:outline-none [color-scheme:dark]"
+            className="bg-transparent text-sm text-primary focus:outline-none [color-scheme:dark]"
           />
         </div>
 
         {hasFilters && (
           <button
             onClick={clearFilters}
-            className="glass glass-hover flex items-center gap-1.5 rounded-xl px-3 py-2.5 text-xs font-medium text-slate-300"
+            className="glass glass-hover flex items-center gap-1.5 rounded-xl px-3 py-2.5 text-xs font-medium text-secondary"
           >
             <XCircle className="h-4 w-4" />
             Limpiar
@@ -355,7 +355,7 @@ export default function Sales({ initialBudgetId, onBudgetConsumed }: SalesProps)
         </button>
       </div>
 
-      <p className="text-xs text-slate-500">
+      <p className="text-xs text-muted">
         {filtered.length} ventas · Total {formatMoney(totals.total)} · Ganancia{' '}
         <span className="text-emerald-400">{formatMoney(totals.profit)}</span>
         {hasFilters && ' (filtrado)'}
@@ -366,7 +366,7 @@ export default function Sales({ initialBudgetId, onBudgetConsumed }: SalesProps)
         <div className="w-full overflow-x-hidden">
           <table className="data-table w-full text-left text-sm md:min-w-full">
             <thead>
-              <tr className="border-b border-white/10 bg-white/[0.02] text-xs text-slate-500">
+              <tr className="border-b border-app bg-card text-xs text-muted">
                 <th className="px-5 py-3 font-medium">Productos</th>
                 <th className="px-4 py-3 font-medium">Cliente</th>
                 <th className="hidden px-4 py-3 font-medium md:table-cell">Fecha</th>
@@ -403,7 +403,7 @@ export default function Sales({ initialBudgetId, onBudgetConsumed }: SalesProps)
                   })
                   actions.push({
                     key: 'copy',
-                    icon: <ClipboardCopy className="h-4 w-4 text-slate-300" />,
+                    icon: <ClipboardCopy className="h-4 w-4 text-secondary" />,
                     label: 'Copiar',
                     onClick: () => copyReceipt(sale),
                   })
@@ -452,7 +452,7 @@ export default function Sales({ initialBudgetId, onBudgetConsumed }: SalesProps)
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ duration: 0.2 }}
-                    className="cursor-pointer border-b border-white/5 text-slate-300 last:border-0 hover:bg-white/[0.03]"
+                    className="cursor-pointer border-b border-app text-secondary last:border-0 hover:bg-card"
                   >
                     <td className="min-w-[100px] max-w-[150px] px-5 py-3 md:max-w-none">
                       <span className="hidden items-center gap-2 md:flex">
@@ -461,7 +461,7 @@ export default function Sales({ initialBudgetId, onBudgetConsumed }: SalesProps)
                           {first?.name ?? 'Producto'}
                         </span>
                         {sale.items.length > 1 && (
-                          <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-medium text-slate-300">
+                          <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-medium text-secondary">
                             +{sale.items.length - 1}
                           </span>
                         )}
@@ -469,7 +469,7 @@ export default function Sales({ initialBudgetId, onBudgetConsumed }: SalesProps)
                       <span className="flex items-center gap-1 md:hidden">
                         <span className="text-lg">{first?.emoji ?? '📦'}</span>
                         {sale.items.length > 1 && (
-                          <span className="rounded-full bg-white/10 px-1.5 py-0.5 text-[10px] font-medium text-slate-300">
+                          <span className="rounded-full bg-white/10 px-1.5 py-0.5 text-[10px] font-medium text-secondary">
                             +{sale.items.length - 1}
                           </span>
                         )}
@@ -481,7 +481,7 @@ export default function Sales({ initialBudgetId, onBudgetConsumed }: SalesProps)
                         {(customerName[0] || '?').toUpperCase()}
                       </span>
                     </td>
-                    <td className="hidden px-4 py-3 text-slate-400 md:table-cell">
+                    <td className="hidden px-4 py-3 text-secondary md:table-cell">
                       {formatDateTime(sale.date)}
                     </td>
                     <td className="min-w-[80px] px-4 py-3">
@@ -521,7 +521,7 @@ export default function Sales({ initialBudgetId, onBudgetConsumed }: SalesProps)
               })}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="py-12 text-center text-slate-500">
+                  <td colSpan={8} className="py-12 text-center text-muted">
                     No hay ventas que coincidan con los filtros.
                   </td>
                 </tr>

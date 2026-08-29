@@ -104,13 +104,13 @@ export default function CustomerFormModal({
                     <h3 className="text-base font-bold text-white">
                       {customer ? 'Editar cliente' : 'Nuevo cliente'}
                     </h3>
-                    <p className="text-xs text-slate-400">Se guarda en tu dispositivo</p>
+                    <p className="text-xs text-secondary">Se guarda en tu dispositivo</p>
                   </div>
                 </div>
                 <button
                   type="button"
                   onClick={onClose}
-                  className="rounded-lg p-1.5 text-slate-400 hover:bg-white/10 hover:text-white"
+                  className="rounded-lg p-1.5 text-secondary hover:bg-card hover:text-primary"
                 >
                   <X className="h-5 w-5" />
                 </button>
@@ -118,45 +118,45 @@ export default function CustomerFormModal({
 
               <div className="space-y-4">
                 <div>
-                  <label className="mb-1.5 block text-xs font-medium text-slate-400">
+                  <label className="mb-1.5 block text-xs font-medium text-secondary">
                     Nombre *
                   </label>
                   <input
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Ej. Carlos Gómez"
-                    className="w-full rounded-xl border border-white/10 bg-white/[0.05] px-3 py-2.5 text-sm text-white placeholder:text-slate-500 outline-none transition-colors focus:border-violet-400/60"
+                    className="w-full rounded-xl border border-app bg-card px-3 py-2.5 text-sm text-white placeholder:text-muted outline-none transition-colors focus:border-violet-400/60"
                   />
                 </div>
 
                 <div>
-                  <label className="mb-1.5 block text-xs font-medium text-slate-400">
+                  <label className="mb-1.5 block text-xs font-medium text-secondary">
                     Teléfono *
                   </label>
                   <input
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder="Ej. 55 1234 5678"
-                    className="w-full rounded-xl border border-white/10 bg-white/[0.05] px-3 py-2.5 text-sm text-white placeholder:text-slate-500 outline-none transition-colors focus:border-violet-400/60"
+                    className="w-full rounded-xl border border-app bg-card px-3 py-2.5 text-sm text-white placeholder:text-muted outline-none transition-colors focus:border-violet-400/60"
                   />
-                  <p className="mt-1 text-[11px] text-slate-500">
+                  <p className="mt-1 text-[11px] text-muted">
                     Solo números y guiones. Se usa para enviar por WhatsApp.
                   </p>
                 </div>
 
                 <div>
-                  <label className="mb-1.5 block text-xs font-medium text-slate-400">Email</label>
+                  <label className="mb-1.5 block text-xs font-medium text-secondary">Email</label>
                   <input
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="cliente@mail.com"
-                    className="w-full rounded-xl border border-white/10 bg-white/[0.05] px-3 py-2.5 text-sm text-white placeholder:text-slate-500 outline-none transition-colors focus:border-violet-400/60"
+                    className="w-full rounded-xl border border-app bg-card px-3 py-2.5 text-sm text-white placeholder:text-muted outline-none transition-colors focus:border-violet-400/60"
                   />
                 </div>
 
                 <div>
-                  <label className="mb-1.5 block text-xs font-medium text-slate-400">
+                  <label className="mb-1.5 block text-xs font-medium text-secondary">
                     Dirección
                   </label>
                   <textarea
@@ -164,7 +164,7 @@ export default function CustomerFormModal({
                     onChange={(e) => setAddress(e.target.value)}
                     rows={2}
                     placeholder="Calle, número, ciudad…"
-                    className="w-full resize-none rounded-xl border border-white/10 bg-white/[0.05] px-3 py-2.5 text-sm text-white placeholder:text-slate-500 outline-none transition-colors focus:border-violet-400/60"
+                    className="w-full resize-none rounded-xl border border-app bg-card px-3 py-2.5 text-sm text-white placeholder:text-muted outline-none transition-colors focus:border-violet-400/60"
                   />
                 </div>
 

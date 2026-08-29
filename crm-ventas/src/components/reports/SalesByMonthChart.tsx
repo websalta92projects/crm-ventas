@@ -30,7 +30,7 @@ export default function SalesByMonthChart({ sales }: { sales: Sale[] }) {
       <header className="mb-5 flex items-center justify-between">
         <div>
           <h3 className="text-base font-semibold text-white">Ventas por mes</h3>
-          <p className="text-xs text-slate-400">Ingresos y ganancia mensual</p>
+          <p className="text-xs text-secondary">Ingresos y ganancia mensual</p>
         </div>
         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-500/15 text-violet-300">
           <BarChart3 className="h-5 w-5" />
@@ -40,15 +40,15 @@ export default function SalesByMonthChart({ sales }: { sales: Sale[] }) {
       <div className="h-[200px] w-full sm:h-64">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" vertical={false} />
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" vertical={false} />
             <XAxis
               dataKey="label"
-              tick={{ fill: '#64748b', fontSize: 11 }}
+              tick={{ fill: 'var(--text-muted)', fontSize: 11 }}
               tickLine={false}
-              axisLine={{ stroke: 'rgba(255,255,255,0.08)' }}
+              axisLine={{ stroke: 'var(--border-color)' }}
             />
             <YAxis
-              tick={{ fill: '#64748b', fontSize: 11 }}
+              tick={{ fill: 'var(--text-muted)', fontSize: 11 }}
               tickLine={false}
               axisLine={false}
               width={60}

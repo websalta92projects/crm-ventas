@@ -82,7 +82,7 @@ export default function ActionsMenu({ items, compact = false }: ActionsMenuProps
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={toggle}
-        className={`glass glass-hover flex min-h-[44px] min-w-[44px] items-center gap-1.5 rounded-xl text-xs font-medium text-slate-200 transition-all active:scale-95 ${
+        className={`glass glass-hover flex min-h-[44px] min-w-[44px] items-center gap-1.5 rounded-xl text-xs font-medium text-primary transition-all active:scale-95 ${
           compact ? 'justify-center px-0' : 'px-3'
         }`}
       >
@@ -115,10 +115,10 @@ export default function ActionsMenu({ items, compact = false }: ActionsMenuProps
                   }}
                   className={`flex min-h-[44px] w-full items-center gap-2.5 rounded-lg px-3 text-left text-sm transition-colors ${
                     item.disabled
-                      ? 'cursor-not-allowed text-slate-600'
+                      ? 'cursor-not-allowed text-muted'
                       : item.danger
                         ? 'text-rose-300 hover:bg-rose-500/15'
-                        : 'text-slate-200 hover:bg-white/10'
+                        : 'text-primary hover:bg-card'
                   }`}
                 >
                   {item.icon}

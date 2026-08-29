@@ -207,7 +207,7 @@ export default function ProductFormModal({
                     <h3 className="text-base font-bold text-white">
                       {product ? 'Editar producto' : 'Nuevo producto'}
                     </h3>
-                    <p className="text-xs text-slate-400">Se guarda en tu dispositivo</p>
+                    <p className="text-xs text-secondary">Se guarda en tu dispositivo</p>
                   </div>
                 </div>
                 <button
@@ -215,7 +215,7 @@ export default function ProductFormModal({
                   onClick={onClose}
                   title="Cerrar"
                   aria-label="Cerrar"
-                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-slate-400 transition-colors hover:bg-white/10 hover:text-white"
+                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-secondary transition-colors hover:bg-card hover:text-primary"
                 >
                   <X className="h-5 w-5" />
                 </button>
@@ -223,32 +223,32 @@ export default function ProductFormModal({
 
               <div className="space-y-4">
                 <div>
-                  <label className="mb-1.5 block text-xs font-medium text-slate-400">
+                  <label className="mb-1.5 block text-xs font-medium text-secondary">
                     Nombre *
                   </label>
                   <input
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Ej. Audífonos Pro"
-                    className="w-full rounded-xl border border-white/10 bg-white/[0.05] px-3 py-2.5 text-sm text-white placeholder:text-slate-500 outline-none transition-colors focus:border-violet-400/60"
+                    className="w-full rounded-xl border border-app bg-card px-3 py-2.5 text-sm text-white placeholder:text-muted outline-none transition-colors focus:border-violet-400/60"
                   />
                 </div>
 
                 <div>
-                  <label className="mb-1.5 block text-xs font-medium text-slate-400">
-                    Código de barras <span className="font-normal text-slate-600">(opcional)</span>
+                  <label className="mb-1.5 block text-xs font-medium text-secondary">
+                    Código de barras <span className="font-normal text-muted">(opcional)</span>
                   </label>
                   <input
                     value={barcode}
                     onChange={(e) => setBarcode(e.target.value)}
                     placeholder="Ej. 7501234567890"
                     autoComplete="off"
-                    className="w-full rounded-xl border border-white/10 bg-white/[0.05] px-3 py-2.5 text-sm text-white placeholder:text-slate-500 outline-none transition-colors focus:border-violet-400/60"
+                    className="w-full rounded-xl border border-app bg-card px-3 py-2.5 text-sm text-white placeholder:text-muted outline-none transition-colors focus:border-violet-400/60"
                   />
                 </div>
 
                 <div>
-                  <label className="mb-1.5 block text-xs font-medium text-slate-400">
+                  <label className="mb-1.5 block text-xs font-medium text-secondary">
                     Descripción
                   </label>
                   <textarea
@@ -256,12 +256,12 @@ export default function ProductFormModal({
                     onChange={(e) => setDescription(e.target.value)}
                     rows={2}
                     placeholder="Características principales del producto…"
-                    className="w-full resize-none rounded-xl border border-white/10 bg-white/[0.05] px-3 py-2.5 text-sm text-white placeholder:text-slate-500 outline-none transition-colors focus:border-violet-400/60"
+                    className="w-full resize-none rounded-xl border border-app bg-card px-3 py-2.5 text-sm text-white placeholder:text-muted outline-none transition-colors focus:border-violet-400/60"
                   />
                 </div>
 
                 <div>
-                  <label className="mb-1.5 block text-xs font-medium text-slate-400">
+                  <label className="mb-1.5 block text-xs font-medium text-secondary">
                     Categoría *
                   </label>
 
@@ -279,7 +279,7 @@ export default function ProductFormModal({
                           if (e.key === 'Escape') cancelCreateCategory()
                         }}
                         placeholder="Nombre de la nueva categoría"
-                        className="w-full rounded-xl border border-violet-400/40 bg-white/[0.05] px-3 py-2.5 text-sm text-white placeholder:text-slate-500 outline-none transition-colors focus:border-violet-400/60"
+                        className="w-full rounded-xl border border-violet-400/40 bg-card px-3 py-2.5 text-sm text-white placeholder:text-muted outline-none transition-colors focus:border-violet-400/60"
                       />
                       <div className="flex gap-2">
                         <button
@@ -293,7 +293,7 @@ export default function ProductFormModal({
                         <button
                           type="button"
                           onClick={cancelCreateCategory}
-                          className="glass glass-hover flex min-h-[44px] items-center justify-center rounded-xl px-3 text-sm font-medium text-slate-300"
+                          className="glass glass-hover flex min-h-[44px] items-center justify-center rounded-xl px-3 text-sm font-medium text-secondary"
                         >
                           Cancelar
                         </button>
@@ -313,17 +313,17 @@ export default function ProductFormModal({
                             if (e.key === 'Escape') setCatOpen(false)
                           }}
                           placeholder="Ej. Audio"
-                          className="w-full bg-transparent text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none"
+                          className="w-full bg-transparent text-sm text-primary placeholder:text-muted focus:outline-none"
                         />
                         <ChevronDown
-                          className={`h-4 w-4 shrink-0 text-slate-500 transition-transform ${
+                          className={`h-4 w-4 shrink-0 text-muted transition-transform ${
                             catOpen ? 'rotate-180' : ''
                           }`}
                         />
                       </div>
 
                       {catOpen && (
-                        <div className="absolute z-50 mt-1 w-full overflow-hidden rounded-xl border border-white/10 bg-slate-900/95 shadow-xl backdrop-blur-md">
+                        <div className="absolute z-50 mt-1 w-full overflow-hidden rounded-xl border border-app bg-panel shadow-xl backdrop-blur-md">
                           {categoryMatches.length > 0 && (
                             <div className="max-h-48 overflow-y-auto">
                               {categoryMatches.map((c) => {
@@ -334,8 +334,8 @@ export default function ProductFormModal({
                                     type="button"
                                     key={c}
                                     onClick={() => selectCategory(c)}
-                                    className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors hover:bg-white/10 ${
-                                      active ? 'text-sky-300' : 'text-slate-200'
+                                    className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors hover:bg-card ${
+                                      active ? 'text-sky-300' : 'text-primary'
                                     }`}
                                   >
                                     <span className="min-w-0 flex-1 truncate">{c}</span>
@@ -348,7 +348,7 @@ export default function ProductFormModal({
                           <button
                             type="button"
                             onClick={startCreateCategory}
-                            className="flex w-full items-center gap-2 border-t border-white/10 px-3 py-2.5 text-left text-sm font-medium text-violet-300 transition-colors hover:bg-white/10"
+                            className="flex w-full items-center gap-2 border-t border-app px-3 py-2.5 text-left text-sm font-medium text-violet-300 transition-colors hover:bg-card"
                           >
                             <Plus className="h-4 w-4 shrink-0" />
                             Crear nueva categoría
@@ -358,7 +358,7 @@ export default function ProductFormModal({
                     </div>
                   )}
 
-                  <p className="mt-1 text-[11px] text-slate-500">
+                  <p className="mt-1 text-[11px] text-muted">
                     {category.trim()
                       ? categories.some(
                           (c) => c.toLowerCase() === category.trim().toLowerCase(),
@@ -371,7 +371,7 @@ export default function ProductFormModal({
 
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                   <div>
-                    <label className="mb-1.5 block text-xs font-medium text-slate-400">
+                    <label className="mb-1.5 block text-xs font-medium text-secondary">
                       Precio de venta *
                     </label>
                     <input
@@ -381,11 +381,11 @@ export default function ProductFormModal({
                       value={price}
                       onChange={(e) => setPrice(e.target.value)}
                       placeholder="0.00"
-                      className="w-full rounded-xl border border-white/10 bg-white/[0.05] px-3 py-2.5 text-sm text-white placeholder:text-slate-500 outline-none transition-colors focus:border-violet-400/60"
+                      className="w-full rounded-xl border border-app bg-card px-3 py-2.5 text-sm text-white placeholder:text-muted outline-none transition-colors focus:border-violet-400/60"
                     />
                   </div>
                   <div>
-                    <label className="mb-1.5 block text-xs font-medium text-slate-400">
+                    <label className="mb-1.5 block text-xs font-medium text-secondary">
                       Precio de costo
                     </label>
                     <input
@@ -395,11 +395,11 @@ export default function ProductFormModal({
                       value={cost}
                       onChange={(e) => setCost(e.target.value)}
                       placeholder="0.00"
-                      className="w-full rounded-xl border border-white/10 bg-white/[0.05] px-3 py-2.5 text-sm text-white placeholder:text-slate-500 outline-none transition-colors focus:border-violet-400/60"
+                      className="w-full rounded-xl border border-app bg-card px-3 py-2.5 text-sm text-white placeholder:text-muted outline-none transition-colors focus:border-violet-400/60"
                     />
                   </div>
                   <div>
-                    <label className="mb-1.5 block text-xs font-medium text-slate-400">
+                    <label className="mb-1.5 block text-xs font-medium text-secondary">
                       Stock
                     </label>
                     <input
@@ -409,13 +409,13 @@ export default function ProductFormModal({
                       value={stock}
                       onChange={(e) => setStock(e.target.value)}
                       placeholder="0"
-                      className="w-full rounded-xl border border-white/10 bg-white/[0.05] px-3 py-2.5 text-sm text-white placeholder:text-slate-500 outline-none transition-colors focus:border-violet-400/60"
+                      className="w-full rounded-xl border border-app bg-card px-3 py-2.5 text-sm text-white placeholder:text-muted outline-none transition-colors focus:border-violet-400/60"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="mb-1.5 block text-xs font-medium text-slate-400">Icono</label>
+                  <label className="mb-1.5 block text-xs font-medium text-secondary">Icono</label>
                   <div className="flex flex-wrap gap-1.5">
                     {EMOJIS.map((e) => (
                       <button
@@ -425,7 +425,7 @@ export default function ProductFormModal({
                         className={`no-min-h flex h-9 w-9 items-center justify-center rounded-lg border text-lg transition-all ${
                           emoji === e
                             ? 'border-violet-400/60 bg-violet-500/20'
-                            : 'border-white/10 bg-white/[0.03] hover:bg-white/[0.08]'
+                            : 'border-app bg-card hover:bg-card'
                         }`}
                       >
                         {e}
@@ -434,14 +434,14 @@ export default function ProductFormModal({
                   </div>
                 </div>
 
-                <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4 text-sm">
-                  <div className="flex justify-between text-slate-400">
+                <div className="rounded-xl border border-app bg-card p-4 text-sm">
+                  <div className="flex justify-between text-secondary">
                     <span>Margen estimado</span>
                     <span className={`font-semibold ${marginColor}`}>
                       {numbersOk && priceNum > 0 ? `${margin.toFixed(1)}%` : '—'}
                     </span>
                   </div>
-                  <div className="mt-1.5 flex justify-between text-slate-400">
+                  <div className="mt-1.5 flex justify-between text-secondary">
                     <span>Ganancia por unidad</span>
                     <span className="font-semibold text-emerald-400">
                       {numbersOk && priceNum > 0 ? formatMoney(priceNum - costNum) : '—'}

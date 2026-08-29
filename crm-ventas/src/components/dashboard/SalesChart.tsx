@@ -26,13 +26,13 @@ function ChartTooltip({ active, payload, label, contentStyle }: ChartTooltipProp
   return (
     <div className="glass-strong px-4 py-3 text-sm" style={contentStyle}>
       <p className="mb-2 font-semibold capitalize text-white">{label}</p>
-      <p className="text-slate-300">
+      <p className="text-secondary">
         Ventas: <span className="font-semibold text-white">{formatMoney(data.total)}</span>
       </p>
-      <p className="text-slate-300">
+      <p className="text-secondary">
         Ganancia: <span className="font-semibold text-emerald-400">{formatMoney(data.profit)}</span>
       </p>
-      <p className="text-slate-300">
+      <p className="text-secondary">
         Unidades: <span className="font-semibold text-white">{data.count}</span>
       </p>
     </div>
@@ -48,7 +48,7 @@ export default function SalesChart() {
       <header className="mb-5 flex items-center justify-between">
         <div>
           <h3 className="text-base font-semibold text-white">Ventas · Últimos 30 días</h3>
-          <p className="text-xs text-slate-400">Ingresos y ganancia diaria</p>
+          <p className="text-xs text-secondary">Ingresos y ganancia diaria</p>
         </div>
         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-500/15 text-sky-300">
           <TrendingUp className="h-5 w-5" />
@@ -68,17 +68,17 @@ export default function SalesChart() {
                 <stop offset="100%" stopColor="#34d399" stopOpacity={0} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" vertical={false} />
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" vertical={false} />
             <XAxis
               dataKey="label"
-              tick={{ fill: '#64748b', fontSize: 11 }}
+              tick={{ fill: 'var(--text-muted)', fontSize: 11 }}
               tickLine={false}
-              axisLine={{ stroke: 'rgba(255,255,255,0.08)' }}
+              axisLine={{ stroke: 'var(--border-color)' }}
               interval="preserveStartEnd"
               minTickGap={24}
             />
             <YAxis
-              tick={{ fill: '#64748b', fontSize: 11 }}
+              tick={{ fill: 'var(--text-muted)', fontSize: 11 }}
               tickLine={false}
               axisLine={false}
               width={64}

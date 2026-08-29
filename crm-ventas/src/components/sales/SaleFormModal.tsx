@@ -293,7 +293,7 @@ export default function SaleFormModal({
                           ? 'Venta desde presupuesto'
                           : 'Venta rápida'}
                     </h3>
-                    <p className="text-xs text-slate-400">
+                    <p className="text-xs text-secondary">
                       El stock se descuenta al guardar · estado inicial: Pendiente de pago
                     </p>
                   </div>
@@ -301,7 +301,7 @@ export default function SaleFormModal({
                 <button
                   type="button"
                   onClick={onClose}
-                  className="rounded-lg p-1.5 text-slate-400 hover:bg-white/10 hover:text-white"
+                  className="rounded-lg p-1.5 text-secondary hover:bg-card hover:text-primary"
                 >
                   <X className="h-5 w-5" />
                 </button>
@@ -310,19 +310,19 @@ export default function SaleFormModal({
               {/* Selector de presupuesto (solo al crear) */}
               {!sale && (
                 <div className="mb-4">
-                  <label className="mb-1.5 block text-xs font-medium text-slate-400">
+                  <label className="mb-1.5 block text-xs font-medium text-secondary">
                     Origen de la venta
                   </label>
                   <select
                     value={budgetId}
                     onChange={(e) => handleSelectBudget(e.target.value)}
-                    className="w-full rounded-xl border border-white/10 bg-white/[0.05] px-3 py-2.5 text-sm text-white outline-none transition-colors focus:border-violet-400/60"
+                    className="w-full rounded-xl border border-app bg-card px-3 py-2.5 text-sm text-white outline-none transition-colors focus:border-violet-400/60"
                   >
-                    <option value="" className="bg-slate-900">
+                    <option value="" className="bg-panel">
                       ⚡ Venta rápida (sin presupuesto)
                     </option>
                     {convertibleBudgets.map((b) => (
-                      <option key={b.id} value={b.id} className="bg-slate-900">
+                      <option key={b.id} value={b.id} className="bg-panel">
                         #{b.number} — {customerById.get(b.customerId)?.name ?? 'Sin cliente'} —{' '}
                         {formatMoney(b.total)}
                       </option>
@@ -339,12 +339,12 @@ export default function SaleFormModal({
 
               {/* Buscador de productos (agregar al carrito) */}
               <div className="relative mb-4">
-                <label className="mb-1.5 block text-xs font-medium text-slate-400">
+                <label className="mb-1.5 block text-xs font-medium text-secondary">
                   Agregar producto
                 </label>
                 <div className="flex items-stretch gap-2">
                   <div className="glass flex flex-1 items-center gap-2 rounded-xl px-3 py-2">
-                    <Search className="h-4 w-4 shrink-0 text-slate-500" />
+                    <Search className="h-4 w-4 shrink-0 text-muted" />
                     <input
                       value={query}
                       onChange={(e) => {
@@ -353,7 +353,7 @@ export default function SaleFormModal({
                       }}
                       onFocus={() => setShowResults(true)}
                       placeholder="Buscar por nombre…"
-                      className="w-full bg-transparent text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none"
+                      className="w-full bg-transparent text-sm text-primary placeholder:text-muted focus:outline-none"
                     />
                   </div>
                   <button
@@ -361,23 +361,23 @@ export default function SaleFormModal({
                     onClick={() => setScannerOpen(true)}
                     title="Escanear código de barras"
                     aria-label="Escanear código de barras"
-                    className="flex shrink-0 items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.05] px-2.5 text-xs font-semibold text-slate-200 transition-all hover:bg-white/[0.12] hover:text-white active:scale-95"
+                    className="flex shrink-0 items-center gap-1.5 rounded-xl border border-app bg-card px-2.5 text-xs font-semibold text-primary transition-all hover:bg-card hover:text-primary active:scale-95"
                   >
                     📷 Escanear
                   </button>
                 </div>
                 {showResults && productResults.length > 0 && (
-                  <div className="absolute z-50 mt-1 w-full overflow-hidden rounded-xl border border-white/10 bg-slate-900/95 shadow-xl backdrop-blur-md">
+                  <div className="absolute z-50 mt-1 w-full overflow-hidden rounded-xl border border-app bg-panel shadow-xl backdrop-blur-md">
                     {productResults.map((p) => (
                       <button
                         type="button"
                         key={p.id}
                         onClick={() => addProduct(p)}
-                        className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-200 transition-colors hover:bg-white/10"
+                        className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-primary transition-colors hover:bg-card"
                       >
                         <span className="text-lg">{p.emoji}</span>
                         <span className="min-w-0 flex-1 truncate">{p.name}</span>
-                        <span className="text-xs text-slate-400">
+                        <span className="text-xs text-secondary">
                           {formatMoney(p.price)} · {p.stock} u.
                         </span>
                       </button>
@@ -386,7 +386,7 @@ export default function SaleFormModal({
                 )}
                 {query.trim() !== '' && productResults.length === 0 && (
                   <div className="mt-2 space-y-2">
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs text-muted">
                       Sin resultados para «{query.trim()}».
                     </p>
                     <button
@@ -404,7 +404,7 @@ export default function SaleFormModal({
               {/* Carrito */}
               {lines.length > 0 ? (
                 <div className="mb-4 max-h-[300px] space-y-2 overflow-y-auto pr-1">
-                  <p className="text-xs font-medium text-slate-400">
+                  <p className="text-xs font-medium text-secondary">
                     Carrito · {totalItems} artículo{totalItems === 1 ? '' : 's'}
                   </p>
                   {lines.map((l) => (
@@ -413,12 +413,12 @@ export default function SaleFormModal({
                       layout
                       initial={{ opacity: 0, y: 6 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="flex items-center gap-2 rounded-xl border border-white/5 bg-white/[0.03] px-3 py-2 sm:gap-3"
+                      className="flex items-center gap-2 rounded-xl border border-app bg-card px-3 py-2 sm:gap-3"
                     >
                       <span className="text-lg">{l.product.emoji}</span>
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-medium text-white">{l.product.name}</p>
-                        <p className="text-[11px] text-slate-500">
+                        <p className="text-[11px] text-muted">
                           {formatMoney(l.product.price)} / u.
                         </p>
                       </div>
@@ -428,7 +428,7 @@ export default function SaleFormModal({
                           onClick={() => changeQty(l.product.id, -1)}
                           title="Disminuir cantidad"
                           aria-label="Disminuir cantidad"
-                          className="flex h-[44px] w-[44px] items-center justify-center rounded-lg bg-white/[0.06] text-slate-300 transition-colors hover:bg-white/[0.12] active:scale-95"
+                          className="flex h-[44px] w-[44px] items-center justify-center rounded-lg bg-card text-secondary transition-colors hover:bg-card active:scale-95"
                         >
                           <Minus className="h-4 w-4" />
                         </button>
@@ -438,14 +438,14 @@ export default function SaleFormModal({
                           value={l.qty}
                           onChange={(e) => setQty(l.product.id, Number(e.target.value))}
                           aria-label={`Cantidad de ${l.product.name}`}
-                          className="h-[44px] w-14 rounded-lg border border-white/10 bg-white/[0.06] text-center text-sm font-semibold text-white outline-none transition-colors focus:border-violet-400/60"
+                          className="h-[44px] w-14 rounded-lg border border-app bg-card text-center text-sm font-semibold text-white outline-none transition-colors focus:border-violet-400/60"
                         />
                         <button
                           type="button"
                           onClick={() => changeQty(l.product.id, 1)}
                           title="Aumentar cantidad"
                           aria-label="Aumentar cantidad"
-                          className="flex h-[44px] w-[44px] items-center justify-center rounded-lg bg-white/[0.06] text-slate-300 transition-colors hover:bg-white/[0.12] active:scale-95"
+                          className="flex h-[44px] w-[44px] items-center justify-center rounded-lg bg-card text-secondary transition-colors hover:bg-card active:scale-95"
                         >
                           <Plus className="h-4 w-4" />
                         </button>
@@ -458,7 +458,7 @@ export default function SaleFormModal({
                         onClick={() => removeLine(l.product.id)}
                         title="Quitar del carrito"
                         aria-label="Quitar del carrito"
-                        className="flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-rose-500/15 hover:text-rose-400"
+                        className="flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-lg text-muted transition-colors hover:bg-rose-500/15 hover:text-rose-400"
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>
@@ -470,18 +470,18 @@ export default function SaleFormModal({
                   )}
                 </div>
               ) : (
-                <p className="mb-4 rounded-xl border border-dashed border-white/10 px-3 py-4 text-center text-xs text-slate-500">
+                <p className="mb-4 rounded-xl border border-dashed border-app px-3 py-4 text-center text-xs text-muted">
                   Carrito vacío. Busca un producto para agregarlo.
                 </p>
               )}
 
               {/* Resumen */}
-              <div className="mb-4 rounded-xl border border-white/10 bg-white/[0.03] p-4 text-sm">
-                <div className="flex justify-between text-slate-400">
+              <div className="mb-4 rounded-xl border border-app bg-card p-4 text-sm">
+                <div className="flex justify-between text-secondary">
                   <span>Subtotal ({totalItems} artículos)</span>
                   <span className="font-semibold text-white">{formatMoney(subtotal)}</span>
                 </div>
-                <div className="mt-1.5 flex justify-between text-slate-400">
+                <div className="mt-1.5 flex justify-between text-secondary">
                   <span>Total</span>
                   <span className="font-bold text-white">{formatMoney(subtotal)}</span>
                 </div>
@@ -489,17 +489,17 @@ export default function SaleFormModal({
 
               {/* Cliente */}
               <div className="mb-4">
-                <label className="mb-1.5 block text-xs font-medium text-slate-400">Cliente</label>
+                <label className="mb-1.5 block text-xs font-medium text-secondary">Cliente</label>
                 <select
                   value={customerId}
                   onChange={(e) => setCustomerId(e.target.value)}
-                  className="w-full rounded-xl border border-white/10 bg-white/[0.05] px-3 py-2.5 text-sm text-white outline-none transition-colors focus:border-violet-400/60"
+                  className="w-full rounded-xl border border-app bg-card px-3 py-2.5 text-sm text-white outline-none transition-colors focus:border-violet-400/60"
                 >
-                  <option value="" className="bg-slate-900">
+                  <option value="" className="bg-panel">
                     Sin cliente (mostrador)
                   </option>
                   {customers.map((c) => (
-                    <option key={c.id} value={c.id} className="bg-slate-900">
+                    <option key={c.id} value={c.id} className="bg-panel">
                       {c.name} — {c.phone}
                     </option>
                   ))}
@@ -508,27 +508,27 @@ export default function SaleFormModal({
 
               <div className="mb-4 grid grid-cols-2 gap-4">
                 <div>
-                  <label className="mb-1.5 block text-xs font-medium text-slate-400">
+                  <label className="mb-1.5 block text-xs font-medium text-secondary">
                     Fecha *
                   </label>
                   <input
                     type="date"
                     value={date}
                     onChange={(e) => setDate(e.target.value)}
-                    className="w-full rounded-xl border border-white/10 bg-white/[0.05] px-3 py-2.5 text-sm text-white outline-none transition-colors focus:border-violet-400/60 [color-scheme:dark]"
+                    className="w-full rounded-xl border border-app bg-card px-3 py-2.5 text-sm text-white outline-none transition-colors focus:border-violet-400/60 [color-scheme:dark]"
                   />
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-xs font-medium text-slate-400">
+                  <label className="mb-1.5 block text-xs font-medium text-secondary">
                     Estado *
                   </label>
                   <select
                     value={status}
                     onChange={(e) => setStatus(e.target.value as SaleStatus)}
-                    className="w-full rounded-xl border border-white/10 bg-white/[0.05] px-3 py-2.5 text-sm text-white outline-none transition-colors focus:border-violet-400/60"
+                    className="w-full rounded-xl border border-app bg-card px-3 py-2.5 text-sm text-white outline-none transition-colors focus:border-violet-400/60"
                   >
                     {SALE_STATUSES.map((s) => (
-                      <option key={s} value={s} className="bg-slate-900">
+                      <option key={s} value={s} className="bg-panel">
                         {STATUS_META[s].label}
                       </option>
                     ))}

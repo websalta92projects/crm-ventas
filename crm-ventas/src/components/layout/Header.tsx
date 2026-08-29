@@ -23,20 +23,20 @@ export default function Header({
         aria-label="Abrir menú"
         className="glass glass-hover flex h-11 w-11 min-h-[44px] min-w-[44px] items-center justify-center lg:hidden"
       >
-        <Menu className="h-5 w-5 text-slate-300" />
+        <Menu className="h-5 w-5 text-secondary" />
       </button>
 
       <div className="hidden md:block">
         <h2 className="text-xl font-bold text-white">{title}</h2>
-        <p className="text-xs capitalize text-slate-400">{subtitle}</p>
+        <p className="text-xs capitalize text-secondary">{subtitle}</p>
       </div>
 
       <div className="ml-auto flex items-center gap-3">
         <div className="glass hidden items-center gap-2 rounded-xl px-3 py-2 md:flex">
-          <Search className="h-4 w-4 text-slate-500" />
+          <Search className="h-4 w-4 text-muted" />
           <input
             placeholder="Buscar venta, producto, cliente…"
-            className="w-48 bg-transparent text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none lg:w-64"
+            className="w-48 bg-transparent text-sm text-primary placeholder:text-muted focus:outline-none lg:w-64"
           />
         </div>
 
@@ -45,7 +45,7 @@ export default function Header({
           aria-label="Notificaciones"
           className="glass glass-hover flex h-11 w-11 min-h-[44px] min-w-[44px] items-center justify-center"
         >
-          <Bell className="h-4 w-4 text-slate-300" />
+          <Bell className="h-4 w-4 text-secondary" />
         </button>
 
         {showNewSale && (

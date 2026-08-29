@@ -2,8 +2,52 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
+/* ============================================================
+   TEMA: variables CSS (oscuro por defecto, claro con data-theme)
+   ============================================================ */
+:root,
+[data-theme='dark'] {
   color-scheme: dark;
+  --bg-primary: #020617;
+  --bg-secondary: #0f172a;
+  --card-bg: rgba(255, 255, 255, 0.04);
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --border-color: rgba(255, 255, 255, 0.1);
+  --glass-bg: rgba(255, 255, 255, 0.04);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-strong-bg: rgba(15, 23, 42, 0.72);
+  --glass-strong-border: rgba(255, 255, 255, 0.12);
+  --hover-bg: rgba(255, 255, 255, 0.07);
+  --hover-border: rgba(255, 255, 255, 0.2);
+  --overlay-bg: rgba(2, 6, 23, 0.7);
+  --scrollbar-bg: rgba(255, 255, 255, 0.12);
+  --scrollbar-hover: rgba(255, 255, 255, 0.22);
+  --toast-bg: rgba(15, 23, 42, 0.92);
+  --toast-border: rgba(255, 255, 255, 0.12);
+}
+
+[data-theme='light'] {
+  color-scheme: light;
+  --bg-primary: #eef2f7;
+  --bg-secondary: #ffffff;
+  --card-bg: #ffffff;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #64748b;
+  --border-color: #e2e8f0;
+  --glass-bg: rgba(255, 255, 255, 0.75);
+  --glass-border: rgba(15, 23, 42, 0.08);
+  --glass-strong-bg: #ffffff;
+  --glass-strong-border: rgba(15, 23, 42, 0.1);
+  --hover-bg: rgba(15, 23, 42, 0.06);
+  --hover-border: rgba(15, 23, 42, 0.16);
+  --overlay-bg: rgba(15, 23, 42, 0.5);
+  --scrollbar-bg: rgba(15, 23, 42, 0.2);
+  --scrollbar-hover: rgba(15, 23, 42, 0.35);
+  --toast-bg: #ffffff;
+  --toast-border: #e2e8f0;
 }
 
 html,
@@ -30,25 +74,26 @@ body {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #020617;
-  color: #e2e8f0;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
 }
 
-/* ---------- Glassmorphism helpers ---------- */
+
+/* ---------- Glassmorphism helpers (tematizados) ---------- */
 @layer components {
   .glass {
-    background: rgba(255, 255, 255, 0.04);
+    background: var(--glass-bg);
     -webkit-backdrop-filter: blur(24px);
     backdrop-filter: blur(24px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--glass-border);
     border-radius: 1rem;
   }
 
   .glass-strong {
-    background: rgba(15, 23, 42, 0.72);
+    background: var(--glass-strong-bg);
     -webkit-backdrop-filter: blur(28px);
     backdrop-filter: blur(28px);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    border: 1px solid var(--glass-strong-border);
     border-radius: 1rem;
   }
 
@@ -60,8 +105,53 @@ body {
   }
 
   .glass-hover:hover {
-    background: rgba(255, 255, 255, 0.07);
-    border-color: rgba(255, 255, 255, 0.2);
+    background: var(--hover-bg);
+    border-color: var(--hover-border);
+  }
+
+  /* ---------- Utilidades semánticas de tema ---------- */
+  .bg-app {
+    background-color: var(--bg-primary);
+  }
+
+  .bg-panel {
+    background-color: var(--bg-secondary);
+  }
+
+  .bg-card {
+    background-color: var(--card-bg);
+  }
+
+  .bg-overlay {
+    background-color: var(--overlay-bg);
+  }
+
+  .text-primary {
+    color: var(--text-primary);
+  }
+
+  .text-secondary {
+    color: var(--text-secondary);
+  }
+
+  .text-muted {
+    color: var(--text-muted);
+  }
+
+  .border-app {
+    border-color: var(--border-color);
+  }
+
+  .hover\:bg-card:hover {
+    background-color: var(--hover-bg);
+  }
+
+  .hover\:border-app:hover {
+    border-color: var(--hover-border);
+  }
+
+  .placeholder\:text-muted::placeholder {
+    color: var(--text-muted);
   }
 }
 
@@ -74,11 +164,11 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.12);
+  background: var(--scrollbar-bg);
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.22);
+  background: var(--scrollbar-hover);
 }
 
 /* ---------- Responsividad móvil ---------- */
@@ -107,4 +197,154 @@ input[type='number']::-webkit-inner-spin-button,
 input[type='number']::-webkit-outer-spin-button {
   -webkit-appearance: none;
   margin: 0;
+}
+
+/* ============================================================
+   MODO CLARO: ajustes sobre utilidades "oscuras" no semánticas
+   (capa de respaldo para componentes que aún no usan variables)
+   ============================================================ */
+[data-theme='light'] .text-white {
+  color: var(--text-primary);
+}
+[data-theme='light'] .hover\:text-white:hover {
+  color: var(--text-primary);
+}
+[data-theme='light'] .text-slate-100,
+[data-theme='light'] .text-slate-200 {
+  color: var(--text-primary);
+}
+[data-theme='light'] .text-slate-300,
+[data-theme='light'] .text-slate-400 {
+  color: var(--text-secondary);
+}
+[data-theme='light'] .text-slate-500,
+[data-theme='light'] .text-slate-600 {
+  color: var(--text-muted);
+}
+[data-theme='light'] .bg-slate-950 {
+  background-color: var(--bg-primary);
+}
+[data-theme='light'] .bg-slate-900 {
+  background-color: var(--bg-secondary);
+}
+[data-theme='light'] .bg-white\/\[0\.03\],
+[data-theme='light'] .bg-white\/\[0\.04\],
+[data-theme='light'] .bg-white\/\[0\.05\],
+[data-theme='light'] .bg-white\/\[0\.06\],
+[data-theme='light'] .bg-white\/\[0\.08\],
+[data-theme='light'] .bg-white\/\[0\.1\] {
+  background-color: var(--card-bg);
+}
+[data-theme='light'] .hover\:bg-white\/5:hover,
+[data-theme='light'] .hover\:bg-white\/10:hover,
+[data-theme='light'] .hover\:bg-white\/\[0\.08\]:hover,
+[data-theme='light'] .hover\:bg-white\/\[0\.1\]:hover,
+[data-theme='light'] .hover\:bg-white\/\[0\.12\]:hover {
+  background-color: var(--hover-bg);
+}
+[data-theme='light'] .border-white\/5,
+[data-theme='light'] .border-white\/10,
+[data-theme='light'] .border-white\/20 {
+  border-color: var(--border-color);
+}
+[data-theme='light'] .bg-white\/10 {
+  background-color: var(--hover-bg);
+}
+[data-theme='light'] ::placeholder {
+  color: var(--text-muted);
+}
+
+/* El texto blanco sobre fondos con gradiente/color debe seguir siendo blanco */
+[data-theme='light'] .bg-gradient-to-r.text-white,
+[data-theme='light'] .bg-gradient-to-b.text-white,
+[data-theme='light'] .bg-gradient-to-br.text-white,
+[data-theme='light'] .bg-gradient-to-t.text-white,
+[data-theme='light'] .bg-violet-500.text-white,
+[data-theme='light'] .bg-violet-600.text-white,
+[data-theme='light'] .bg-sky-500.text-white,
+[data-theme='light'] .bg-sky-600.text-white,
+[data-theme='light'] .bg-emerald-500.text-white,
+[data-theme='light'] .bg-emerald-600.text-white,
+[data-theme='light'] .bg-rose-500.text-white,
+[data-theme='light'] .bg-rose-600.text-white,
+[data-theme='light'] .bg-amber-500.text-white,
+[data-theme='light'] .bg-amber-600.text-white,
+[data-theme='light'] .bg-slate-500.text-white,
+[data-theme='light'] .bg-slate-600.text-white {
+  color: #ffffff;
+}
+
+/* Iconos sobre "glass" con tinte violeta: texto oscuro en modo claro */
+[data-theme='light'] .from-violet-500\/25.text-white {
+  color: var(--text-primary);
+}
+
+/* Iconos blancos DENTRO de contenedores con gradiente se mantienen blancos */
+[data-theme='light'] .bg-gradient-to-r .text-white,
+[data-theme='light'] .bg-gradient-to-b .text-white,
+[data-theme='light'] .bg-gradient-to-br .text-white,
+[data-theme='light'] .bg-gradient-to-t .text-white {
+  color: #ffffff;
+}
+
+/* Nav activo translúcido del sidebar: texto oscuro en modo claro */
+[data-theme='light'] .from-violet-500\/20.text-white {
+  color: var(--text-primary);
+}
+
+/* Vista previa del documento (fondo de color de la empresa): texto blanco fijo */
+[data-theme='light'] .doc-preview .text-white,
+[data-theme='light'] .doc-preview .text-white\/80 {
+  color: #ffffff;
+}
+
+/* Textos de color con mejor contraste en modo claro */
+[data-theme='light'] .text-emerald-300,
+[data-theme='light'] .text-emerald-400 {
+  color: #047857;
+}
+[data-theme='light'] .text-sky-300,
+[data-theme='light'] .text-sky-400 {
+  color: #0369a1;
+}
+[data-theme='light'] .text-rose-300,
+[data-theme='light'] .text-rose-400 {
+  color: #be123c;
+}
+[data-theme='light'] .text-amber-300,
+[data-theme='light'] .text-amber-400 {
+  color: #b45309;
+}
+[data-theme='light'] .text-violet-200,
+[data-theme='light'] .text-violet-300,
+[data-theme='light'] .text-violet-400 {
+  color: #6d28d9;
+}
+[data-theme='light'] .text-green-300,
+[data-theme='light'] .text-green-400 {
+  color: #15803d;
+}
+[data-theme='light'] .text-teal-300,
+[data-theme='light'] .text-teal-400 {
+  color: #0f766e;
+}
+[data-theme='light'] .text-yellow-300,
+[data-theme='light'] .text-yellow-400 {
+  color: #a16207;
+}
+[data-theme='light'] .text-orange-300,
+[data-theme='light'] .text-orange-400 {
+  color: #c2410c;
+}
+[data-theme='light'] .text-purple-300 {
+  color: #7e22ce;
+}
+[data-theme='light'] .text-blue-300 {
+  color: #1d4ed8;
+}
+[data-theme='light'] .text-indigo-300 {
+  color: #4338ca;
+}
+[data-theme='light'] .text-red-300 {
+  color: #be123c;
 }

@@ -43,7 +43,7 @@ function SidebarContent({
     <div className="flex h-full w-full flex-col">
       <div className="mb-8 flex items-center gap-3">
         {config.logo ? (
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-white/[0.05]">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-app bg-card">
             <img src={config.logo} alt={config.name} className="h-full w-full object-contain" />
           </div>
         ) : (
@@ -56,12 +56,12 @@ function SidebarContent({
             {config.name || 'ElectroCRM'}
           </h1>
           {config.subtitle?.trim() && (
-            <p className="truncate text-[11px] text-slate-400">{config.subtitle}</p>
+            <p className="truncate text-[11px] text-secondary">{config.subtitle}</p>
           )}
         </div>
         <button
           onClick={() => onNavigate(activeView)}
-          className="rounded-lg p-1 text-slate-400 hover:text-white lg:hidden"
+          className="rounded-lg p-1 text-secondary hover:text-primary lg:hidden"
         >
           <X className="h-5 w-5" />
         </button>
@@ -78,16 +78,16 @@ function SidebarContent({
               }}
               className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
                 item.soon
-                  ? 'cursor-not-allowed text-slate-500'
+                  ? 'cursor-not-allowed text-muted'
                   : active
                     ? 'bg-gradient-to-r from-violet-500/20 to-sky-500/10 text-white shadow-[inset_0_0_0_1px_rgba(139,92,246,0.35)]'
-                    : 'text-slate-400 hover:bg-white/[0.05] hover:text-white'
+                    : 'text-secondary hover:bg-card hover:text-primary'
               }`}
             >
               <item.icon className="h-[18px] w-[18px] shrink-0" />
               <span className="flex-1 text-left">{item.label}</span>
               {item.soon && (
-                <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-medium text-slate-400">
+                <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-medium text-secondary">
                   Pronto
                 </span>
               )}

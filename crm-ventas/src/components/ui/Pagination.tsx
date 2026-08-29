@@ -20,13 +20,13 @@ export default function Pagination({ page, totalPages, onPageChange }: Paginatio
         disabled={page <= 1}
         title="Página anterior"
         aria-label="Página anterior"
-        className="glass glass-hover flex min-h-[44px] items-center gap-2 rounded-xl px-4 text-sm font-medium text-slate-200 transition-all active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
+        className="glass glass-hover flex min-h-[44px] items-center gap-2 rounded-xl px-4 text-sm font-medium text-primary transition-all active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
       >
         <ChevronLeft className="h-4 w-4" />
         <span className="hidden sm:inline">Anterior</span>
       </button>
 
-      <span className="text-sm tabular-nums text-slate-400">
+      <span className="text-sm tabular-nums text-secondary">
         Página {page} de {totalPages}
       </span>
 
@@ -35,7 +35,7 @@ export default function Pagination({ page, totalPages, onPageChange }: Paginatio
         disabled={page >= totalPages}
         title="Página siguiente"
         aria-label="Página siguiente"
-        className="glass glass-hover flex min-h-[44px] items-center gap-2 rounded-xl px-4 text-sm font-medium text-slate-200 transition-all active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
+        className="glass glass-hover flex min-h-[44px] items-center gap-2 rounded-xl px-4 text-sm font-medium text-primary transition-all active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
       >
         <span className="hidden sm:inline">Siguiente</span>
         <ChevronRight className="h-4 w-4" />

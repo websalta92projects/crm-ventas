@@ -370,7 +370,7 @@ export default function BudgetFormModal({ open, budget, onClose }: BudgetFormMod
                     <h3 className="text-base font-bold text-white">
                       {budget ? `Editar presupuesto #${budget.number}` : 'Nuevo presupuesto'}
                     </h3>
-                    <p className="text-xs text-slate-400">
+                    <p className="text-xs text-secondary">
                       Impuestos del {Math.round(TAX_RATE * 100)}% incluidos
                     </p>
                   </div>
@@ -379,7 +379,7 @@ export default function BudgetFormModal({ open, budget, onClose }: BudgetFormMod
                   onClick={onClose}
                   title="Cerrar"
                   aria-label="Cerrar"
-                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-slate-400 transition-colors hover:bg-white/10 hover:text-white"
+                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-secondary transition-colors hover:bg-card hover:text-primary"
                 >
                   <X className="h-5 w-5" />
                 </button>
@@ -389,13 +389,13 @@ export default function BudgetFormModal({ open, budget, onClose }: BudgetFormMod
 
               {/* Cliente: tarjeta seleccionada o buscador */}
               {customer ? (
-                <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.04] p-4">
+                <div className="flex items-center gap-3 rounded-xl border border-app bg-card p-4">
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-sky-500 text-xs font-bold text-white">
                     {customer.name.slice(0, 2).toUpperCase()}
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-semibold text-white">{customer.name}</p>
-                    <p className="truncate text-xs text-slate-400">
+                    <p className="truncate text-xs text-secondary">
                       {customer.phone || 'Sin teléfono'}
                     </p>
                   </div>
@@ -413,11 +413,11 @@ export default function BudgetFormModal({ open, budget, onClose }: BudgetFormMod
                 </div>
               ) : (
                 <div className="relative">
-                  <label className="mb-1.5 block text-xs font-medium text-slate-400">
+                  <label className="mb-1.5 block text-xs font-medium text-secondary">
                     Cliente *
                   </label>
                   <div className="glass flex items-center gap-2 rounded-xl px-3 py-2">
-                    <Search className="h-4 w-4 shrink-0 text-slate-500" />
+                    <Search className="h-4 w-4 shrink-0 text-muted" />
                     <input
                       value={customerQuery}
                       onChange={(e) => {
@@ -426,11 +426,11 @@ export default function BudgetFormModal({ open, budget, onClose }: BudgetFormMod
                       }}
                       onFocus={() => setShowCustomers(true)}
                       placeholder="Buscar cliente…"
-                      className="w-full bg-transparent text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none"
+                      className="w-full bg-transparent text-sm text-primary placeholder:text-muted focus:outline-none"
                     />
                   </div>
                   {showCustomers && (
-                    <div className="absolute z-50 mt-1 w-full overflow-hidden rounded-xl border border-white/10 bg-slate-900/95 shadow-xl backdrop-blur-md">
+                    <div className="absolute z-50 mt-1 w-full overflow-hidden rounded-xl border border-app bg-panel shadow-xl backdrop-blur-md">
                       {customerResults.map((c) => (
                         <button
                           type="button"
@@ -440,13 +440,13 @@ export default function BudgetFormModal({ open, budget, onClose }: BudgetFormMod
                             setCustomerQuery('')
                             setShowCustomers(false)
                           }}
-                          className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-200 transition-colors hover:bg-white/10"
+                          className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-primary transition-colors hover:bg-card"
                         >
                           <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white/10 text-[10px] font-bold text-white">
                             {c.name.slice(0, 2).toUpperCase()}
                           </span>
                           <span className="min-w-0 flex-1 truncate">{c.name}</span>
-                          <span className="text-xs text-slate-500">{c.phone}</span>
+                          <span className="text-xs text-muted">{c.phone}</span>
                         </button>
                       ))}
                       <button
@@ -455,7 +455,7 @@ export default function BudgetFormModal({ open, budget, onClose }: BudgetFormMod
                           setShowCustomers(false)
                           setCustomerModalOpen(true)
                         }}
-                        className="flex w-full items-center gap-2 border-t border-white/10 px-3 py-2 text-left text-sm font-medium text-sky-300 transition-colors hover:bg-white/10"
+                        className="flex w-full items-center gap-2 border-t border-app px-3 py-2 text-left text-sm font-medium text-sky-300 transition-colors hover:bg-card"
                       >
                         <UserPlus className="h-4 w-4" />
                         Crear cliente nuevo…
@@ -467,12 +467,12 @@ export default function BudgetFormModal({ open, budget, onClose }: BudgetFormMod
 
               {/* Agregar producto */}
               <div className="relative">
-                <label className="mb-1.5 block text-xs font-medium text-slate-400">
+                <label className="mb-1.5 block text-xs font-medium text-secondary">
                   Agregar producto
                 </label>
                 <div className="flex items-stretch gap-2">
                   <div className="glass flex flex-1 items-center gap-2 rounded-xl px-3 py-2">
-                    <Search className="h-4 w-4 shrink-0 text-slate-500" />
+                    <Search className="h-4 w-4 shrink-0 text-muted" />
                     <input
                       value={productQuery}
                       onChange={(e) => {
@@ -481,7 +481,7 @@ export default function BudgetFormModal({ open, budget, onClose }: BudgetFormMod
                       }}
                       onFocus={() => setShowProducts(true)}
                       placeholder="Buscar por nombre…"
-                      className="w-full bg-transparent text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none"
+                      className="w-full bg-transparent text-sm text-primary placeholder:text-muted focus:outline-none"
                     />
                   </div>
                   <button
@@ -489,24 +489,24 @@ export default function BudgetFormModal({ open, budget, onClose }: BudgetFormMod
                     onClick={() => setScannerOpen(true)}
                     title="Escanear código de barras"
                     aria-label="Escanear código de barras"
-                    className="flex shrink-0 items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.05] px-2.5 text-xs font-semibold text-slate-200 transition-all hover:bg-white/[0.12] hover:text-white active:scale-95"
+                    className="flex shrink-0 items-center gap-1.5 rounded-xl border border-app bg-card px-2.5 text-xs font-semibold text-primary transition-all hover:bg-card hover:text-primary active:scale-95"
                   >
                     📷 Escanear
                   </button>
                 </div>
                 {showProducts && productResults.length > 0 && (
-                  <div className="absolute z-50 mt-1 w-full overflow-hidden rounded-xl border border-white/10 bg-slate-900/95 shadow-xl backdrop-blur-md">
+                  <div className="absolute z-50 mt-1 w-full overflow-hidden rounded-xl border border-app bg-panel shadow-xl backdrop-blur-md">
                     {productResults.map((p) => {
                       const inCart = cart.some((l) => l.productId === p.id)
                       return (
                         <div
                           key={p.id}
-                          className="flex items-center gap-2 border-b border-white/5 px-3 py-2 last:border-0"
+                          className="flex items-center gap-2 border-b border-app px-3 py-2 last:border-0"
                         >
                           <span className="text-lg">{p.emoji}</span>
                           <div className="min-w-0 flex-1">
-                            <p className="truncate text-sm text-slate-200">{p.name}</p>
-                            <p className="text-[11px] text-slate-500">
+                            <p className="truncate text-sm text-primary">{p.name}</p>
+                            <p className="text-[11px] text-muted">
                               {formatMoney(p.price)} · {p.stock} u.
                             </p>
                           </div>
@@ -529,7 +529,7 @@ export default function BudgetFormModal({ open, budget, onClose }: BudgetFormMod
                 )}
                 {productQuery.trim() !== '' && productResults.length === 0 && (
                   <div className="mt-2 space-y-2">
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs text-muted">
                       Sin resultados para «{productQuery.trim()}».
                     </p>
                     <button
@@ -547,7 +547,7 @@ export default function BudgetFormModal({ open, budget, onClose }: BudgetFormMod
               {/* Carrito */}
               <div>
                 <div className="mb-1.5 flex items-center justify-between">
-                  <label className="block text-xs font-medium text-slate-400">
+                  <label className="block text-xs font-medium text-secondary">
                     Carrito ({lines.length})
                   </label>
                   {lines.length > 0 && (
@@ -568,13 +568,13 @@ export default function BudgetFormModal({ open, budget, onClose }: BudgetFormMod
                         layout
                         initial={{ opacity: 0, y: 6 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="rounded-xl border border-white/5 bg-white/[0.03] p-4"
+                        className="rounded-xl border border-app bg-card p-4"
                       >
                         <div className="flex items-center gap-3">
                           <span className="text-lg">{l.product.emoji}</span>
                           <div className="min-w-0 flex-1">
                             <p className="truncate text-sm font-medium text-white">{l.product.name}</p>
-                            <p className="text-[11px] text-slate-500">
+                            <p className="text-[11px] text-muted">
                               {formatMoney(l.product.price)} / u.
                             </p>
                           </div>
@@ -583,7 +583,7 @@ export default function BudgetFormModal({ open, budget, onClose }: BudgetFormMod
                             onClick={() => removeLine(l.product.id)}
                             title="Eliminar del carrito"
                             aria-label={`Eliminar ${l.product.name} del carrito`}
-                            className="flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-xl text-slate-500 transition-colors hover:bg-rose-500/15 hover:text-rose-400"
+                            className="flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-xl text-muted transition-colors hover:bg-rose-500/15 hover:text-rose-400"
                           >
                             <X className="h-4 w-4" />
                           </button>
@@ -595,7 +595,7 @@ export default function BudgetFormModal({ open, budget, onClose }: BudgetFormMod
                               onClick={() => changeQty(l.product.id, -1)}
                               title="Disminuir cantidad"
                               aria-label="Disminuir cantidad"
-                              className="flex h-[44px] w-[44px] items-center justify-center rounded-lg bg-white/[0.06] text-slate-300 transition-colors hover:bg-white/[0.12] active:scale-95"
+                              className="flex h-[44px] w-[44px] items-center justify-center rounded-lg bg-card text-secondary transition-colors hover:bg-card active:scale-95"
                             >
                               <Minus className="h-4 w-4" />
                             </button>
@@ -605,20 +605,20 @@ export default function BudgetFormModal({ open, budget, onClose }: BudgetFormMod
                               value={l.qty}
                               onChange={(e) => setQty(l.product.id, Number(e.target.value))}
                               aria-label={`Cantidad de ${l.product.name}`}
-                              className="h-[44px] w-14 rounded-lg border border-white/10 bg-white/[0.06] text-center text-sm font-semibold text-white outline-none transition-colors focus:border-violet-400/60"
+                              className="h-[44px] w-14 rounded-lg border border-app bg-card text-center text-sm font-semibold text-white outline-none transition-colors focus:border-violet-400/60"
                             />
                             <button
                               type="button"
                               onClick={() => changeQty(l.product.id, 1)}
                               title="Aumentar cantidad"
                               aria-label="Aumentar cantidad"
-                              className="flex h-[44px] w-[44px] items-center justify-center rounded-lg bg-white/[0.06] text-slate-300 transition-colors hover:bg-white/[0.12] active:scale-95"
+                              className="flex h-[44px] w-[44px] items-center justify-center rounded-lg bg-card text-secondary transition-colors hover:bg-card active:scale-95"
                             >
                               <Plus className="h-4 w-4" />
                             </button>
                           </div>
                           <div className="text-right">
-                            <p className="text-[10px] uppercase tracking-wide text-slate-500">
+                            <p className="text-[10px] uppercase tracking-wide text-muted">
                               Subtotal
                             </p>
                             <p className="text-sm font-bold text-white">
@@ -630,7 +630,7 @@ export default function BudgetFormModal({ open, budget, onClose }: BudgetFormMod
                     ))}
                   </div>
                 ) : (
-                  <p className="rounded-xl border border-dashed border-white/10 px-3 py-6 text-center text-xs text-slate-500">
+                  <p className="rounded-xl border border-dashed border-app px-3 py-6 text-center text-xs text-muted">
                     No hay productos agregados
                   </p>
                 )}
@@ -638,15 +638,15 @@ export default function BudgetFormModal({ open, budget, onClose }: BudgetFormMod
 
               {/* Totales destacados */}
               <div className="rounded-xl border border-violet-400/20 bg-gradient-to-br from-violet-500/10 to-sky-500/10 p-4 text-sm shadow-lg shadow-violet-500/10">
-                <div className="flex justify-between text-slate-400">
+                <div className="flex justify-between text-secondary">
                   <span>Subtotal</span>
                   <span className="font-semibold text-white">{formatMoney(subtotal)}</span>
                 </div>
-                <div className="mt-2 flex justify-between text-slate-400">
+                <div className="mt-2 flex justify-between text-secondary">
                   <span>Impuestos ({Math.round(TAX_RATE * 100)}%)</span>
-                  <span className="font-semibold text-slate-300">{formatMoney(tax)}</span>
+                  <span className="font-semibold text-secondary">{formatMoney(tax)}</span>
                 </div>
-                <div className="mt-2 flex justify-between border-t border-white/10 pt-2">
+                <div className="mt-2 flex justify-between border-t border-app pt-2">
                   <span className="font-semibold text-white">Total</span>
                   <span className="text-lg font-extrabold text-emerald-300">
                     {formatMoney(total)}
@@ -679,7 +679,7 @@ export default function BudgetFormModal({ open, budget, onClose }: BudgetFormMod
                     onClick={copyToWhatsApp}
                     title="Copiar texto"
                     aria-label="Copiar texto"
-                    className="flex min-h-[44px] items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.05] px-2 py-2 text-[11px] font-semibold text-slate-200 transition-all hover:bg-white/[0.1] active:scale-95"
+                    className="flex min-h-[44px] items-center justify-center gap-1.5 rounded-xl border border-app bg-card px-2 py-2 text-[11px] font-semibold text-primary transition-all hover:bg-card active:scale-95"
                   >
                     <ClipboardCopy className="h-4 w-4" />
                     Copiar
@@ -693,7 +693,7 @@ export default function BudgetFormModal({ open, budget, onClose }: BudgetFormMod
                     <Send className="h-4 w-4" />
                     📤 Enviar presupuesto
                   </button>
-                  <p className="mt-1.5 text-center text-[11px] text-slate-500">
+                  <p className="mt-1.5 text-center text-[11px] text-muted">
                     Genera el PDF, abre WhatsApp y marca el presupuesto como enviado.
                   </p>
                 </div>

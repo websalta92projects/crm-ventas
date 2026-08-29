@@ -63,14 +63,14 @@ export default function CustomerHistoryModal({
                   </div>
                   <div>
                     <h3 className="text-base font-bold text-white">{customer.name}</h3>
-                    <p className="text-xs text-slate-400">
+                    <p className="text-xs text-secondary">
                       {customer.phone || 'Sin teléfono'} · {customer.email || 'Sin email'}
                     </p>
                   </div>
                 </div>
                 <button
                   onClick={onClose}
-                  className="rounded-lg p-1.5 text-slate-400 hover:bg-white/10 hover:text-white"
+                  className="rounded-lg p-1.5 text-secondary hover:bg-card hover:text-primary"
                 >
                   <X className="h-5 w-5" />
                 </button>
@@ -78,17 +78,17 @@ export default function CustomerHistoryModal({
 
               {/* Resumen */}
               <div className="mb-4 grid grid-cols-3 gap-2 text-center">
-                <div className="rounded-xl bg-white/[0.04] px-3 py-2">
+                <div className="rounded-xl bg-card px-3 py-2">
                   <p className="text-lg font-bold text-white">{history.length}</p>
-                  <p className="text-[10px] uppercase tracking-wide text-slate-500">Compras</p>
+                  <p className="text-[10px] uppercase tracking-wide text-muted">Compras</p>
                 </div>
-                <div className="rounded-xl bg-white/[0.04] px-3 py-2">
+                <div className="rounded-xl bg-card px-3 py-2">
                   <p className="text-lg font-bold text-white">{summary.items}</p>
-                  <p className="text-[10px] uppercase tracking-wide text-slate-500">Artículos</p>
+                  <p className="text-[10px] uppercase tracking-wide text-muted">Artículos</p>
                 </div>
-                <div className="rounded-xl bg-white/[0.04] px-3 py-2">
+                <div className="rounded-xl bg-card px-3 py-2">
                   <p className="text-lg font-bold text-emerald-400">{formatMoney(summary.total)}</p>
-                  <p className="text-[10px] uppercase tracking-wide text-slate-500">Total gastado</p>
+                  <p className="text-[10px] uppercase tracking-wide text-muted">Total gastado</p>
                 </div>
               </div>
 
@@ -100,19 +100,19 @@ export default function CustomerHistoryModal({
                     return (
                       <div
                         key={s.id}
-                        className="flex items-center gap-3 rounded-xl border border-white/5 bg-white/[0.03] px-3 py-2.5"
+                        className="flex items-center gap-3 rounded-xl border border-app bg-card px-3 py-2.5"
                       >
                         <span className="text-lg">{first?.emoji ?? '📦'}</span>
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-sm font-medium text-white">
                             {first?.name ?? 'Producto eliminado'}
                             {s.items.length > 1 && (
-                              <span className="ml-1.5 rounded-full bg-white/10 px-1.5 py-0.5 text-[10px] text-slate-300">
+                              <span className="ml-1.5 rounded-full bg-white/10 px-1.5 py-0.5 text-[10px] text-secondary">
                                 +{s.items.length - 1}
                               </span>
                             )}
                           </p>
-                          <p className="text-[11px] text-slate-500">
+                          <p className="text-[11px] text-muted">
                             {formatDateOnly(s.date)} · {saleUnits(s)} u.
                           </p>
                         </div>
@@ -125,7 +125,7 @@ export default function CustomerHistoryModal({
                   })}
                 </div>
               ) : (
-                <p className="py-8 text-center text-sm text-slate-500">
+                <p className="py-8 text-center text-sm text-muted">
                   Este cliente todavía no tiene compras registradas.
                 </p>
               )}

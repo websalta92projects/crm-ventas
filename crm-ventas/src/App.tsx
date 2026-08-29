@@ -60,7 +60,7 @@ export default function App() {
   }
 
   return (
-    <div className="relative flex h-screen overflow-hidden text-slate-100">
+    <div className="relative flex h-screen overflow-hidden text-primary">
       <Background />
       <Sidebar
         open={sidebarOpen}

@@ -127,7 +127,7 @@ export default function BarcodeScannerModal({ open, onClose, onScan }: BarcodeSc
                     onClick={toggleTorch}
                     title="Linterna"
                     aria-label="Linterna"
-                    className="flex h-10 w-10 items-center justify-center rounded-xl text-slate-400 transition-colors hover:bg-white/10 hover:text-white"
+                    className="flex h-10 w-10 items-center justify-center rounded-xl text-secondary transition-colors hover:bg-card hover:text-primary"
                   >
                     <Lightbulb
                       className={`h-5 w-5 ${torch ? 'fill-amber-300 text-amber-300' : ''}`}
@@ -138,7 +138,7 @@ export default function BarcodeScannerModal({ open, onClose, onScan }: BarcodeSc
                     onClick={onClose}
                     title="Cerrar"
                     aria-label="Cerrar"
-                    className="flex h-10 w-10 items-center justify-center rounded-xl text-slate-400 transition-colors hover:bg-white/10 hover:text-white"
+                    className="flex h-10 w-10 items-center justify-center rounded-xl text-secondary transition-colors hover:bg-card hover:text-primary"
                   >
                     <X className="h-5 w-5" />
                   </button>
@@ -152,9 +152,9 @@ export default function BarcodeScannerModal({ open, onClose, onScan }: BarcodeSc
                 {error ? (
                   <p className="mt-2 text-center text-xs text-rose-400">{error}</p>
                 ) : !ready ? (
-                  <p className="mt-2 text-center text-xs text-slate-400">Activando cámara…</p>
+                  <p className="mt-2 text-center text-xs text-secondary">Activando cámara…</p>
                 ) : (
-                  <p className="mt-2 text-center text-xs text-slate-400">
+                  <p className="mt-2 text-center text-xs text-secondary">
                     Apunta la cámara al código de barras del producto
                   </p>
                 )}

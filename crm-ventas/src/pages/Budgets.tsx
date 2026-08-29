@@ -250,7 +250,7 @@ export default function Budgets({ onCreateSale }: BudgetsProps) {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as 'all' | BudgetStatus)}
-            className="bg-transparent text-sm text-slate-200 focus:outline-none [&>option]:bg-slate-900"
+            className="bg-transparent text-sm text-primary focus:outline-none [&>option]:bg-panel"
           >
             <option value="all">Todos los estados</option>
             {BUDGET_STATUSES.map((s) => (
@@ -270,7 +270,7 @@ export default function Budgets({ onCreateSale }: BudgetsProps) {
         </button>
       </div>
 
-      <p className="text-xs text-slate-500">
+      <p className="text-xs text-muted">
         {filtered.length} presupuestos ·{' '}
         <span className="text-emerald-400">{activeCount} activos</span> (enviados + aceptados)
         {statusFilter !== 'all' && ` en «${BUDGET_STATUS_META[statusFilter].label}»`}
@@ -281,7 +281,7 @@ export default function Budgets({ onCreateSale }: BudgetsProps) {
         <div className="w-full overflow-x-hidden">
           <table className="data-table w-full text-left text-sm md:min-w-full">
             <thead>
-              <tr className="border-b border-white/10 bg-white/[0.02] text-xs text-slate-500">
+              <tr className="border-b border-app bg-card text-xs text-muted">
                 <th className="px-5 py-3 font-medium">Folio</th>
                 <th className="px-4 py-3 font-medium">Cliente</th>
                 <th className="px-4 py-3 font-medium">Productos</th>
@@ -394,7 +394,7 @@ export default function Budgets({ onCreateSale }: BudgetsProps) {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ duration: 0.2 }}
-                    className="cursor-pointer border-b border-white/5 text-slate-300 last:border-0 hover:bg-white/[0.03]"
+                    className="cursor-pointer border-b border-app text-secondary last:border-0 hover:bg-card"
                   >
                     <td className="min-w-[60px] px-5 py-3 text-xs md:text-sm">
                       <span className="font-semibold text-white">#{b.number}</span>
@@ -427,7 +427,7 @@ export default function Budgets({ onCreateSale }: BudgetsProps) {
                     <td className="min-w-[80px] px-4 py-3">
                       <StatusBadge status={b.status} compact={isMobile} />
                     </td>
-                    <td className="hidden px-4 py-3 text-slate-400 md:table-cell">
+                    <td className="hidden px-4 py-3 text-secondary md:table-cell">
                       {formatDateOnly(b.updatedAt)}
                     </td>
                     <td className="w-[60px] px-5 py-3 text-center">
@@ -452,7 +452,7 @@ export default function Budgets({ onCreateSale }: BudgetsProps) {
               })}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="py-12 text-center text-slate-500">
+                  <td colSpan={7} className="py-12 text-center text-muted">
                     No hay presupuestos con este estado.
                   </td>
                 </tr>

@@ -84,12 +84,12 @@ export default function Customers() {
       {/* Barra de herramientas */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="glass flex min-w-[200px] flex-1 items-center gap-2 rounded-xl px-3 py-2">
-          <Search className="h-4 w-4 shrink-0 text-slate-500" />
+          <Search className="h-4 w-4 shrink-0 text-muted" />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Buscar por nombre, email o teléfono…"
-            className="w-full bg-transparent text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none"
+            className="w-full bg-transparent text-sm text-primary placeholder:text-muted focus:outline-none"
           />
         </div>
 
@@ -102,7 +102,7 @@ export default function Customers() {
         </button>
       </div>
 
-      <p className="text-xs text-slate-500">
+      <p className="text-xs text-muted">
         {filtered.length} de {customers.length} clientes
         {query.trim() && ` · buscando «${query.trim()}»`}
       </p>
@@ -125,8 +125,8 @@ export default function Customers() {
         </motion.div>
       ) : (
         <div className="glass flex flex-col items-center justify-center gap-3 py-16 text-center">
-          <UsersRound className="h-10 w-10 text-slate-500" />
-          <p className="text-sm text-slate-400">
+          <UsersRound className="h-10 w-10 text-muted" />
+          <p className="text-sm text-secondary">
             {customers.length === 0
               ? 'Todavía no hay clientes registrados.'
               : 'No hay clientes que coincidan con la búsqueda.'}

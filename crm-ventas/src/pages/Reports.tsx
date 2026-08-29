@@ -45,28 +45,28 @@ export default function Reports() {
       {/* Selector de período + exportar PDF */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="glass flex items-center gap-2 rounded-xl px-3 py-2">
-          <CalendarRange className="h-4 w-4 shrink-0 text-slate-500" />
+          <CalendarRange className="h-4 w-4 shrink-0 text-muted" />
           <input
             type="date"
             value={from}
             onChange={(e) => setFrom(e.target.value)}
-            className="bg-transparent text-sm text-slate-200 focus:outline-none [color-scheme:dark]"
+            className="bg-transparent text-sm text-primary focus:outline-none [color-scheme:dark]"
           />
-          <span className="text-slate-500">→</span>
+          <span className="text-muted">→</span>
           <input
             type="date"
             value={to}
             onChange={(e) => setTo(e.target.value)}
-            className="bg-transparent text-sm text-slate-200 focus:outline-none [color-scheme:dark]"
+            className="bg-transparent text-sm text-primary focus:outline-none [color-scheme:dark]"
           />
         </div>
 
         {from || to ? (
-          <span className="text-xs text-slate-400">
+          <span className="text-xs text-secondary">
             {from || 'inicio'} → {to || 'hoy'}
           </span>
         ) : (
-          <span className="text-xs text-slate-500">Todo el historial</span>
+          <span className="text-xs text-muted">Todo el historial</span>
         )}
 
         <button

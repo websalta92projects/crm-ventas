@@ -26,7 +26,7 @@ export default function RecentSales() {
       <header className="mb-4 flex items-center justify-between">
         <div>
           <h3 className="text-base font-semibold text-white">Últimas ventas</h3>
-          <p className="text-xs text-slate-400">Actividad reciente</p>
+          <p className="text-xs text-secondary">Actividad reciente</p>
         </div>
         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-300">
           <ReceiptText className="h-5 w-5" />
@@ -36,7 +36,7 @@ export default function RecentSales() {
       <div className="overflow-x-auto">
         <table className="data-table w-full text-left text-sm">
           <thead>
-            <tr className="border-b border-white/10 text-xs text-slate-500">
+            <tr className="border-b border-app text-xs text-muted">
               <th className="pb-3 pr-4 font-medium">Producto</th>
               <th className="pb-3 pr-4 font-medium">Cliente</th>
               <th className="pb-3 pr-4 font-medium">Fecha</th>
@@ -56,14 +56,14 @@ export default function RecentSales() {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.15 + i * 0.05 }}
-                  className="border-b border-white/5 text-slate-300 last:border-0 hover:bg-white/[0.03]"
+                  className="border-b border-app text-secondary last:border-0 hover:bg-card"
                 >
                   <td className="py-3 pr-4">
                     <span className="flex items-center gap-2">
                       <span className="text-lg">{first?.emoji ?? '📦'}</span>
                       <span className="font-medium text-white">{first?.name ?? 'Producto'}</span>
                       {sale.items.length > 1 && (
-                        <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-medium text-slate-300">
+                        <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-medium text-secondary">
                           +{sale.items.length - 1}
                         </span>
                       )}
@@ -72,7 +72,7 @@ export default function RecentSales() {
                   <td className="py-3 pr-4">
                     {customerById.get(sale.customerId)?.name ?? 'Sin cliente'}
                   </td>
-                  <td className="py-3 pr-4 text-slate-400">{formatDateTime(sale.date)}</td>
+                  <td className="py-3 pr-4 text-secondary">{formatDateTime(sale.date)}</td>
                   <td className="py-3 pr-4">
                     <StatusBadge status={sale.status} />
                   </td>
@@ -86,7 +86,7 @@ export default function RecentSales() {
                   <td className="py-3 pl-4 text-right">
                     <button
                       onClick={() => handleRemove(sale)}
-                      className="rounded-lg p-1.5 text-slate-500 transition-colors hover:bg-rose-500/15 hover:text-rose-400"
+                      className="rounded-lg p-1.5 text-muted transition-colors hover:bg-rose-500/15 hover:text-rose-400"
                       title="Eliminar venta"
                     >
                       <Trash2 className="h-4 w-4" />
@@ -97,7 +97,7 @@ export default function RecentSales() {
             })}
             {recent.length === 0 && (
               <tr>
-                <td colSpan={8} className="py-8 text-center text-slate-500">
+                <td colSpan={8} className="py-8 text-center text-muted">
                   Todavía no hay ventas registradas.
                 </td>
               </tr>

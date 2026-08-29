@@ -78,7 +78,7 @@ export default function DetailModal({
                   </div>
                   <div>
                     <h3 className="text-base font-bold text-white">{title}</h3>
-                    {subtitle && <p className="text-xs text-slate-400">{subtitle}</p>}
+                    {subtitle && <p className="text-xs text-secondary">{subtitle}</p>}
                   </div>
                 </div>
                 <button
@@ -86,7 +86,7 @@ export default function DetailModal({
                   onClick={onClose}
                   title="Cerrar"
                   aria-label="Cerrar"
-                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-slate-400 transition-colors hover:bg-white/10 hover:text-white"
+                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-secondary transition-colors hover:bg-card hover:text-primary"
                 >
                   <X className="h-5 w-5" />
                 </button>
@@ -94,13 +94,13 @@ export default function DetailModal({
 
               <div className="space-y-4">
                 {/* Cliente */}
-                <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.04] p-4">
+                <div className="flex items-center gap-3 rounded-xl border border-app bg-card p-4">
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-sky-500 text-xs font-bold text-white">
                     {(customerName[0] || '?').toUpperCase()}
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-semibold text-white">{customerName}</p>
-                    <p className="truncate text-xs text-slate-400">
+                    <p className="truncate text-xs text-secondary">
                       {customerPhone || 'Sin teléfono'}
                     </p>
                   </div>
@@ -109,7 +109,7 @@ export default function DetailModal({
 
                 {/* Productos */}
                 <div>
-                  <p className="mb-1.5 text-xs font-medium text-slate-400">
+                  <p className="mb-1.5 text-xs font-medium text-secondary">
                     Productos ({items.length})
                   </p>
                   {items.length > 0 ? (
@@ -117,12 +117,12 @@ export default function DetailModal({
                       {items.map((item, idx) => (
                         <div
                           key={idx}
-                          className="flex items-center gap-3 rounded-xl border border-white/5 bg-white/[0.03] p-3"
+                          className="flex items-center gap-3 rounded-xl border border-app bg-card p-3"
                         >
                           <span className="text-lg">{item.emoji}</span>
                           <div className="min-w-0 flex-1">
                             <p className="truncate text-sm font-medium text-white">{item.name}</p>
-                            <p className="text-[11px] text-slate-500">
+                            <p className="text-[11px] text-muted">
                               {formatMoney(item.unitPrice)} / u.
                             </p>
                           </div>
@@ -136,7 +136,7 @@ export default function DetailModal({
                       ))}
                     </div>
                   ) : (
-                    <p className="rounded-xl border border-dashed border-white/10 px-3 py-6 text-center text-xs text-slate-500">
+                    <p className="rounded-xl border border-dashed border-app px-3 py-6 text-center text-xs text-muted">
                       Sin productos
                     </p>
                   )}
@@ -149,7 +149,7 @@ export default function DetailModal({
                       key={idx}
                       className={`flex justify-between ${
                         idx > 0 ? 'mt-2' : ''
-                      } ${line.strong ? 'border-t border-white/10 pt-2' : 'text-slate-400'}`}
+                      } ${line.strong ? 'border-t border-app pt-2' : 'text-secondary'}`}
                     >
                       <span className={line.strong ? 'font-semibold text-white' : ''}>
                         {line.label}
@@ -183,10 +183,10 @@ export default function DetailModal({
                         }}
                         className={`flex min-h-[44px] items-center justify-center gap-1.5 rounded-xl px-3 text-xs font-semibold transition-all active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 ${
                           a.disabled
-                            ? 'text-slate-500'
+                            ? 'text-muted'
                             : a.danger
                               ? 'border border-rose-400/30 bg-rose-500/15 text-rose-300 hover:bg-rose-500/25'
-                              : 'glass glass-hover text-slate-200 hover:text-white'
+                              : 'glass glass-hover text-primary hover:text-primary'
                         }`}
                       >
                         {a.icon}

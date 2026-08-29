@@ -43,13 +43,13 @@ export default function ConfirmModal({
                 </div>
                 <div className="min-w-0">
                   <h3 className="text-base font-bold text-white">{title}</h3>
-                  <p className="mt-1 text-sm leading-relaxed text-slate-400">{message}</p>
+                  <p className="mt-1 text-sm leading-relaxed text-secondary">{message}</p>
                 </div>
               </div>
               <div className="mt-6 flex justify-end gap-2">
                 <button
                   onClick={onClose}
-                  className="glass glass-hover rounded-xl px-4 py-2 text-sm font-medium text-slate-300"
+                  className="glass glass-hover rounded-xl px-4 py-2 text-sm font-medium text-secondary"
                 >
                   Cancelar
                 </button>

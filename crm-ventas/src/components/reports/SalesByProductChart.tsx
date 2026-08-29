@@ -21,7 +21,7 @@ export default function SalesByProductChart({
       <header className="mb-4 flex items-center justify-between">
         <div>
           <h3 className="text-base font-semibold text-white">Ventas por producto</h3>
-          <p className="text-xs text-slate-400">Ingresos por producto</p>
+          <p className="text-xs text-secondary">Ingresos por producto</p>
         </div>
         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-300">
           <PieIcon className="h-5 w-5" />
@@ -60,7 +60,7 @@ export default function SalesByProductChart({
         </ResponsiveContainer>
         <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
           <p className="text-xl font-bold text-white">{data.length}</p>
-          <p className="text-[10px] text-slate-400">productos</p>
+          <p className="text-[10px] text-secondary">productos</p>
         </div>
       </div>
 
@@ -71,12 +71,12 @@ export default function SalesByProductChart({
               className="h-2.5 w-2.5 shrink-0 rounded-full"
               style={{ backgroundColor: COLORS[index % COLORS.length] }}
             />
-            <span className="flex-1 truncate text-slate-300">{item.name}</span>
+            <span className="flex-1 truncate text-secondary">{item.name}</span>
             <span className="font-semibold text-white">{formatMoney(item.revenue)}</span>
           </li>
         ))}
         {data.length === 0 && (
-          <li className="text-sm text-slate-500">Sin ventas registradas.</li>
+          <li className="text-sm text-muted">Sin ventas registradas.</li>
         )}
       </ul>
     </section>
