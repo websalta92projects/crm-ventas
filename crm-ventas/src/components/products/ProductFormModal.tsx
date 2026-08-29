@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import toast from 'react-hot-toast'
 import { Check, ChevronDown, PackagePlus, Plus, X } from 'lucide-react'
+import BarcodeScannerModal from '../ui/BarcodeScannerModal'
 import { useSalesStore } from '../../store/salesStore'
 import type { Product } from '../../types'
 import { formatMoney } from '../../utils/format'
@@ -34,6 +35,8 @@ export default function ProductFormModal({
 
   const [name, setName] = useState('')
   const [barcode, setBarcode] = useState('')
+  // Escáner de código de barras dentro del formulario (solo precarga el campo)
+  const [scannerOpen, setScannerOpen] = useState(false)
   const [description, setDescription] = useState('')
   const [category, setCategory] = useState('')
   const [price, setPrice] = useState('')
@@ -70,6 +73,15 @@ export default function ProductFormModal({
     setCreatingCategory(false)
     setNewCategory('')
   }, [open, product, initialName, initialBarcode])
+
+  // Código escaneado con el botón 📷 del formulario: solo precarga el campo.
+  // El formulario NO se cierra; el usuario sigue completando y guarda después.
+  const handleScanBarcode = (code: string) => {
+    console.log('📷 Código escaneado en formulario de producto:', code)
+    setScannerOpen(false)
+    setBarcode(code.trim()) // reemplaza el código actual si lo había
+    toast.success('Código de barras precargado 📷')
+  }
 
   const priceNum = parseFloat(price)
   const costNum = parseFloat(cost)
@@ -185,7 +197,8 @@ export default function ProductFormModal({
   }
 
   return (
-    <AnimatePresence>
+    <>
+      <AnimatePresence>
       {open && (
         <>
           <motion.div
@@ -244,13 +257,27 @@ export default function ProductFormModal({
                   <label className="mb-1.5 block text-xs font-medium text-secondary">
                     Código de barras <span className="font-normal text-muted">(opcional)</span>
                   </label>
-                  <input
-                    value={barcode}
-                    onChange={(e) => setBarcode(e.target.value)}
-                    placeholder="Ej. 7501234567890"
-                    autoComplete="off"
-                    className="w-full rounded-xl border border-app bg-card px-3 py-2.5 text-sm text-white placeholder:text-muted outline-none transition-colors focus:border-violet-400/60"
-                  />
+                  <div className="flex gap-2">
+                    <input
+                      value={barcode}
+                      onChange={(e) => setBarcode(e.target.value)}
+                      placeholder="Ej. 7501234567890"
+                      autoComplete="off"
+                      className="w-full rounded-xl border border-app bg-card px-3 py-2.5 text-sm text-primary placeholder:text-muted outline-none transition-colors focus:border-violet-400/60"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        console.log('📷 Iniciando cámara... (formulario de producto)')
+                        setScannerOpen(true)
+                      }}
+                      title="Escanear código de barras"
+                      aria-label="Escanear código de barras"
+                      className="flex shrink-0 items-center gap-1.5 rounded-xl border border-app bg-card px-3 text-xs font-semibold text-primary transition-all hover:bg-card active:scale-95"
+                    >
+                      📷 Escanear
+                    </button>
+                  </div>
                 </div>
 
                 <div>
@@ -467,6 +494,14 @@ export default function ProductFormModal({
         </>
       )}
     </AnimatePresence>
+
+      {/* Escáner del formulario: solo precarga el campo, NO cierra el formulario */}
+      <BarcodeScannerModal
+        open={scannerOpen}
+        onClose={() => setScannerOpen(false)}
+        onScan={handleScanBarcode}
+      />
+    </>
   )
 }
 
