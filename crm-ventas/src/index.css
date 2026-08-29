@@ -1,0 +1,96 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #020617;
+  color: #e2e8f0;
+}
+
+/* ---------- Glassmorphism helpers ---------- */
+@layer components {
+  .glass {
+    background: rgba(255, 255, 255, 0.04);
+    -webkit-backdrop-filter: blur(24px);
+    backdrop-filter: blur(24px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 1rem;
+  }
+
+  .glass-strong {
+    background: rgba(15, 23, 42, 0.72);
+    -webkit-backdrop-filter: blur(28px);
+    backdrop-filter: blur(28px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 1rem;
+  }
+
+  .glass-hover {
+    transition:
+      background-color 0.3s,
+      border-color 0.3s,
+      transform 0.3s;
+  }
+
+  .glass-hover:hover {
+    background: rgba(255, 255, 255, 0.07);
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+}
+
+/* ---------- Scrollbar ---------- */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+/* ---------- Responsividad móvil ---------- */
+@media (max-width: 640px) {
+  /* Botones: área táctil mínima de 44px (guía iOS/Android).
+     Los controles muy pequeños pueden optar por no estirarse con .no-min-h */
+  button:not(.no-min-h) {
+    min-height: 44px;
+  }
+
+  /* Tablas: reducir el padding de celdas para aprovechar el ancho */
+  .data-table th,
+  .data-table td {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+}
+
+::selection {
+  background: rgba(139, 92, 246, 0.35);
+}
+
+/* Quitar flechas de inputs numéricos */
+input[type='number']::-webkit-inner-spin-button,
+input[type='number']::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
