@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import toast from 'react-hot-toast'
 import { Filter, PackageSearch, Plus, RotateCcw, Search } from 'lucide-react'
@@ -6,6 +6,7 @@ import ProductCard from '../components/products/ProductCard'
 import ProductFormModal from '../components/products/ProductFormModal'
 import ConfirmModal from '../components/products/ConfirmModal'
 import Pagination from '../components/ui/Pagination'
+import BarcodeScannerModal from '../components/ui/BarcodeScannerModal'
 import { useSalesStore } from '../store/salesStore'
 import type { Product } from '../types'
 
@@ -22,6 +23,14 @@ export default function Products({ refreshKey = 0 }: { refreshKey?: number }) {
   const [deleting, setDeleting] = useState<Product | null>(null)
   const [resetOpen, setResetOpen] = useState(false)
   const [page, setPage] = useState(1)
+  // Escaneo de código de barras
+  const [scannerOpen, setScannerOpen] = useState(false)
+  const [scannerManual, setScannerManual] = useState(false)
+  // Código escaneado sin producto registrado (precarga el formulario de producto)
+  const [preloadBarcode, setPreloadBarcode] = useState('')
+  // Producto encontrado por escaneo (se resalta brevemente en la lista)
+  const [highlightedId, setHighlightedId] = useState<string | null>(null)
+  const highlightTimerRef = useRef<number | null>(null)
 
   // Categorías disponibles (se actualizan solas al agregar/editar productos)
   const categories = useMemo(
@@ -67,6 +76,7 @@ export default function Products({ refreshKey = 0 }: { refreshKey?: number }) {
   }, [sales])
 
   const openCreate = () => {
+    setPreloadBarcode('')
     setEditing(null)
     setFormOpen(true)
   }
@@ -74,6 +84,32 @@ export default function Products({ refreshKey = 0 }: { refreshKey?: number }) {
   const openEdit = (p: Product) => {
     setEditing(p)
     setFormOpen(true)
+  }
+
+  // Escaneo en productos = búsqueda rápida (NO agrega al carrito)
+  const handleBarcodeScanned = (code: string) => {
+    console.log('📷 Código recibido en productos:', code)
+    setScannerOpen(false)
+    const product = products.find((p) => p.barcode && p.barcode.trim() === code.trim())
+    if (product) {
+      console.log('✅ Producto encontrado:', product.name)
+      // Limpia filtros y va a la página donde está el producto (resaltado)
+      setQuery('')
+      setCategory('all')
+      const idx = products.findIndex((x) => x.id === product.id)
+      setPage(Math.floor(Math.max(0, idx) / PAGE_SIZE) + 1)
+      setHighlightedId(product.id)
+      if (highlightTimerRef.current) window.clearTimeout(highlightTimerRef.current)
+      highlightTimerRef.current = window.setTimeout(() => setHighlightedId(null), 3000)
+      openEdit(product)
+      toast.success('✅ Producto encontrado')
+    } else {
+      console.log('⚠️ Producto no encontrado para el código:', code)
+      setPreloadBarcode(code.trim())
+      setEditing(null)
+      setFormOpen(true)
+      toast.error('⚠️ Producto no encontrado. ¿Quieres crearlo?')
+    }
   }
 
   const handleDelete = () => {
@@ -111,6 +147,33 @@ export default function Products({ refreshKey = 0 }: { refreshKey?: number }) {
             className="w-full bg-transparent text-sm text-primary placeholder:text-muted focus:outline-none"
           />
         </div>
+
+        <button
+          type="button"
+          onClick={() => {
+            console.log('📷 Iniciando cámara... (productos)')
+            setScannerManual(false)
+            setScannerOpen(true)
+          }}
+          title="Escanear código de barras"
+          aria-label="Escanear código de barras"
+          className="flex shrink-0 items-center gap-1.5 rounded-xl border border-app bg-card px-3 py-2 text-xs font-semibold text-primary transition-all hover:bg-card active:scale-95"
+        >
+          📷 Escanear
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            console.log('⌨️ Abriendo ingreso manual de código (productos)')
+            setScannerManual(true)
+            setScannerOpen(true)
+          }}
+          title="Ingresar código de barras manualmente"
+          aria-label="Ingresar código de barras manualmente"
+          className="flex shrink-0 items-center gap-1.5 rounded-xl border border-app bg-card px-3 py-2 text-xs font-semibold text-primary transition-all hover:bg-card active:scale-95"
+        >
+          ⌨️ Manual
+        </button>
 
         <div className="glass flex items-center gap-2 rounded-xl px-3 py-2">
           <Filter className="h-4 w-4 shrink-0 text-muted" />
@@ -156,13 +219,19 @@ export default function Products({ refreshKey = 0 }: { refreshKey?: number }) {
         <motion.div layout className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
           <AnimatePresence mode="popLayout">
             {pageItems.map((p) => (
-              <ProductCard
+              <div
                 key={p.id}
-                product={p}
-                salesCount={salesCountByProduct.get(p.id) ?? 0}
-                onEdit={() => openEdit(p)}
-                onDelete={() => setDeleting(p)}
-              />
+                className={`rounded-2xl transition-shadow ${
+                  p.id === highlightedId ? 'ring-2 ring-violet-400' : ''
+                }`}
+              >
+                <ProductCard
+                  product={p}
+                  salesCount={salesCountByProduct.get(p.id) ?? 0}
+                  onEdit={() => openEdit(p)}
+                  onDelete={() => setDeleting(p)}
+                />
+              </div>
             ))}
           </AnimatePresence>
         </motion.div>
@@ -182,7 +251,20 @@ export default function Products({ refreshKey = 0 }: { refreshKey?: number }) {
       <Pagination page={safePage} totalPages={totalPages} onPageChange={setPage} />
 
       {/* Formulario crear / editar */}
-      <ProductFormModal open={formOpen} product={editing} onClose={() => setFormOpen(false)} />
+      <ProductFormModal
+        open={formOpen}
+        product={editing}
+        initialBarcode={preloadBarcode}
+        onClose={() => setFormOpen(false)}
+      />
+
+      {/* Escáner de código de barras (búsqueda rápida: no agrega al carrito) */}
+      <BarcodeScannerModal
+        open={scannerOpen}
+        onClose={() => setScannerOpen(false)}
+        onScan={handleBarcodeScanned}
+        startWithManual={scannerManual}
+      />
 
       {/* Confirmación de eliminación */}
       <ConfirmModal
