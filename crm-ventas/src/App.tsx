@@ -11,6 +11,7 @@ import Budgets from './pages/Budgets'
 import Customers from './pages/Customers'
 import Reports from './pages/Reports'
 import Settings from './pages/Settings'
+import { useSalesStore } from './store/salesStore'
 import { formatToday } from './utils/format'
 import type { View } from './types'
 
@@ -29,6 +30,11 @@ export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [saleModalOpen, setSaleModalOpen] = useState(false)
   const [saleFromBudgetId, setSaleFromBudgetId] = useState<string | null>(null)
+
+  // "Force refresh": sube con cada cambio de datos del store. Se pasa a las
+  // páginas con listas para garantizar que siempre se re-rendericen tras guardar,
+  // eliminar o cambiar el estado de un registro (sin necesidad de F5).
+  const refreshKey = useSalesStore((s) => s.dataVersion)
 
   // En móvil, el teclado virtual no debe tapar los inputs: al enfocar se hace
   // scrollIntoView para mantener el campo visible.
@@ -79,15 +85,16 @@ export default function App() {
         />
         <main id="main-content" className="flex-1 overflow-y-auto px-4 pb-10 md:px-8">
           {view === 'dashboard' && <Dashboard />}
-          {view === 'productos' && <Products />}
+          {view === 'productos' && <Products refreshKey={refreshKey} />}
           {view === 'ventas' && (
             <Sales
               initialBudgetId={saleFromBudgetId}
               onBudgetConsumed={() => setSaleFromBudgetId(null)}
+              refreshKey={refreshKey}
             />
           )}
-          {view === 'presupuestos' && <Budgets onCreateSale={createSaleFromBudget} />}
-          {view === 'clientes' && <Customers />}
+          {view === 'presupuestos' && <Budgets onCreateSale={createSaleFromBudget} refreshKey={refreshKey} />}
+          {view === 'clientes' && <Customers refreshKey={refreshKey} />}
           {view === 'reportes' && <Reports />}
           {view === 'configuracion' && <Settings />}
         </main>

@@ -236,14 +236,20 @@ export default function SaleFormModal({
       return
     }
 
-    saveSale({
-      id: sale?.id,
-      items: lines.map((l) => ({ productId: l.product.id, quantity: l.qty })),
-      customerId,
-      status,
-      date: new Date(`${date}T12:00:00`).toISOString(),
-      budgetId: budgetId || undefined,
-    })
+    try {
+      saveSale({
+        id: sale?.id,
+        items: lines.map((l) => ({ productId: l.product.id, quantity: l.qty })),
+        customerId,
+        status,
+        date: new Date(`${date}T12:00:00`).toISOString(),
+        budgetId: budgetId || undefined,
+      })
+    } catch (error) {
+      console.error('[electro-crm] Error al guardar la venta:', error)
+      toast.error('No se pudo guardar la venta. Inténtalo de nuevo.')
+      return
+    }
     toast.success(
       sale
         ? 'Venta actualizada ✅'

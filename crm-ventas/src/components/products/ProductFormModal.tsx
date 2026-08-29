@@ -117,17 +117,23 @@ export default function ProductFormModal({
     // La categoría (nueva o existente) queda registrada en LocalStorage
     setCategories(registerCategory(category.trim()))
 
-    saveProduct({
-      id: product?.id,
-      name: name.trim(),
-      description: description.trim(),
-      category: category.trim(),
-      price: priceNum,
-      cost: costNum,
-      stock: stockNum,
-      emoji: emoji || '📦',
-      ...(barcodeTrim ? { barcode: barcodeTrim } : {}),
-    })
+    try {
+      saveProduct({
+        id: product?.id,
+        name: name.trim(),
+        description: description.trim(),
+        category: category.trim(),
+        price: priceNum,
+        cost: costNum,
+        stock: stockNum,
+        emoji: emoji || '📦',
+        ...(barcodeTrim ? { barcode: barcodeTrim } : {}),
+      })
+    } catch (error) {
+      console.error('[electro-crm] Error al guardar el producto:', error)
+      toast.error('No se pudo guardar el producto. Inténtalo de nuevo.')
+      return
+    }
     // Devuelve el producto guardado para que el flujo de presupuesto/venta lo agregue al carrito
     const saved = product
       ? {

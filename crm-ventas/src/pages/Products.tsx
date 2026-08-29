@@ -9,7 +9,7 @@ import Pagination from '../components/ui/Pagination'
 import { useSalesStore } from '../store/salesStore'
 import type { Product } from '../types'
 
-export default function Products() {
+export default function Products({ refreshKey = 0 }: { refreshKey?: number }) {
   const products = useSalesStore((s) => s.products)
   const sales = useSalesStore((s) => s.sales)
   const removeProduct = useSalesStore((s) => s.removeProduct)
@@ -37,7 +37,7 @@ export default function Products() {
       const matchesCategory = category === 'all' || p.category === category
       return matchesQuery && matchesCategory
     })
-  }, [products, query, category])
+  }, [products, query, category, refreshKey])
 
   // Paginación: 10 productos por página
   const PAGE_SIZE = 10
@@ -78,8 +78,13 @@ export default function Products() {
 
   const handleDelete = () => {
     if (!deleting) return
-    removeProduct(deleting.id)
-    toast('Producto eliminado', { icon: '🗑️' })
+    try {
+      removeProduct(deleting.id)
+      toast('Producto eliminado', { icon: '🗑️' })
+    } catch (error) {
+      console.error('[electro-crm] Error al eliminar el producto:', error)
+      toast.error('No se pudo eliminar el producto.')
+    }
   }
 
   const handleReset = () => {

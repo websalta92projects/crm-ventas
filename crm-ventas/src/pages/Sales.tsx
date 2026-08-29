@@ -35,9 +35,11 @@ import type { Sale, SaleStatus } from '../types'
 interface SalesProps {
   initialBudgetId?: string | null
   onBudgetConsumed?: () => void
+  // Se incrementa con cada cambio de datos del store (force refresh)
+  refreshKey?: number
 }
 
-export default function Sales({ initialBudgetId, onBudgetConsumed }: SalesProps) {
+export default function Sales({ initialBudgetId, onBudgetConsumed, refreshKey }: SalesProps) {
   const sales = useSalesStore((s) => s.sales)
   const customers = useSalesStore((s) => s.customers)
   const removeSale = useSalesStore((s) => s.removeSale)
@@ -87,7 +89,7 @@ export default function Sales({ initialBudgetId, onBudgetConsumed }: SalesProps)
         return matchesQuery && matchesStatus && matchesFrom && matchesTo
       })
       .sort((a, b) => b.date.localeCompare(a.date))
-  }, [sales, query, status, fromDate, toDate])
+  }, [sales, query, status, fromDate, toDate, refreshKey])
 
   // Paginación: 7 ventas por página
   const PAGE_SIZE = 7
@@ -139,14 +141,24 @@ export default function Sales({ initialBudgetId, onBudgetConsumed }: SalesProps)
 
   const handleDelete = () => {
     if (!deleting) return
-    removeSale(deleting.id)
-    toast('Venta eliminada (stock restaurado)', { icon: '🗑️' })
+    try {
+      removeSale(deleting.id)
+      toast('Venta eliminada (stock restaurado)', { icon: '🗑️' })
+    } catch (error) {
+      console.error('[electro-crm] Error al eliminar la venta:', error)
+      toast.error('No se pudo eliminar la venta.')
+    }
   }
 
   // Cancelar venta requiere confirmación (acción crítica: restaura stock)
   const handleCancel = () => {
     if (!canceling) return
-    changeStatus(canceling, 'cancelado', 'Venta cancelada 🚫')
+    try {
+      changeStatus(canceling, 'cancelado', 'Venta cancelada 🚫')
+    } catch (error) {
+      console.error('[electro-crm] Error al cancelar la venta:', error)
+      toast.error('No se pudo cancelar la venta.')
+    }
   }
 
   // Acciones del modal de detalle (según el estado de la venta)

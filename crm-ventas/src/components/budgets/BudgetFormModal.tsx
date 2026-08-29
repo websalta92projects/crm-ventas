@@ -214,12 +214,18 @@ export default function BudgetFormModal({ open, budget, onClose }: BudgetFormMod
     const text = buildCurrentText(number)
 
     // 1. Marca el presupuesto como Enviado
-    saveBudget({
-      id: budget?.id,
-      customerId,
-      items: lines.map((l) => ({ productId: l.product.id, quantity: l.qty })),
-      status: 'enviado',
-    })
+    try {
+      saveBudget({
+        id: budget?.id,
+        customerId,
+        items: lines.map((l) => ({ productId: l.product.id, quantity: l.qty })),
+        status: 'enviado',
+      })
+    } catch (error) {
+      console.error('[electro-crm] Error al enviar el presupuesto:', error)
+      toast.error('No se pudo enviar el presupuesto.')
+      return
+    }
     toast.success('Presupuesto enviado 📤')
     onClose()
 

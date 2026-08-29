@@ -53,13 +53,19 @@ export default function CustomerFormModal({
       return
     }
 
-    saveCustomer({
-      id: customer?.id,
-      name: name.trim(),
-      phone: phone.trim(),
-      email: email.trim(),
-      address: address.trim(),
-    })
+    try {
+      saveCustomer({
+        id: customer?.id,
+        name: name.trim(),
+        phone: phone.trim(),
+        email: email.trim(),
+        address: address.trim(),
+      })
+    } catch (error) {
+      console.error('[electro-crm] Error al guardar el cliente:', error)
+      toast.error('No se pudo guardar el cliente. Inténtalo de nuevo.')
+      return
+    }
     // Devuelve el cliente guardado para que el flujo de presupuesto lo seleccione
     const saved = customer
       ? {

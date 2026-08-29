@@ -31,9 +31,11 @@ import type { Budget, BudgetStatus } from '../types'
 
 interface BudgetsProps {
   onCreateSale?: (budgetId: string) => void
+  // Se incrementa con cada cambio de datos del store (force refresh)
+  refreshKey?: number
 }
 
-export default function Budgets({ onCreateSale }: BudgetsProps) {
+export default function Budgets({ onCreateSale, refreshKey }: BudgetsProps) {
   const budgets = useSalesStore((s) => s.budgets)
   const customers = useSalesStore((s) => s.customers)
   const removeBudget = useSalesStore((s) => s.removeBudget)
@@ -57,7 +59,7 @@ export default function Budgets({ onCreateSale }: BudgetsProps) {
       budgets
         .filter((b) => statusFilter === 'all' || b.status === statusFilter)
         .sort((a, b) => b.number - a.number),
-    [budgets, statusFilter],
+    [budgets, statusFilter, refreshKey],
   )
 
   // Paginación: 7 presupuestos por página
@@ -150,14 +152,24 @@ export default function Budgets({ onCreateSale }: BudgetsProps) {
 
   const handleDelete = () => {
     if (!deleting) return
-    removeBudget(deleting.id)
-    toast('Presupuesto eliminado', { icon: '🗑️' })
+    try {
+      removeBudget(deleting.id)
+      toast('Presupuesto eliminado', { icon: '🗑️' })
+    } catch (error) {
+      console.error('[electro-crm] Error al eliminar el presupuesto:', error)
+      toast.error('No se pudo eliminar el presupuesto.')
+    }
   }
 
   // Rechazar presupuesto requiere confirmación (acción crítica)
   const handleReject = () => {
     if (!rejecting) return
-    changeStatus(rejecting, 'rechazado', 'Presupuesto rechazado')
+    try {
+      changeStatus(rejecting, 'rechazado', 'Presupuesto rechazado')
+    } catch (error) {
+      console.error('[electro-crm] Error al rechazar el presupuesto:', error)
+      toast.error('No se pudo actualizar el presupuesto.')
+    }
   }
 
   // Acciones del modal de detalle (según el estado del presupuesto)
@@ -227,13 +239,19 @@ export default function Budgets({ onCreateSale }: BudgetsProps) {
       toast.error('El presupuesto no tiene cliente asignado')
       return
     }
-    saveSale({
-      items: b.items.map((i) => ({ productId: i.productId, quantity: i.quantity })),
-      customerId: b.customerId,
-      status: 'pendiente_pago',
-      date: new Date().toISOString(),
-      budgetId: b.id,
-    })
+    try {
+      saveSale({
+        items: b.items.map((i) => ({ productId: i.productId, quantity: i.quantity })),
+        customerId: b.customerId,
+        status: 'pendiente_pago',
+        date: new Date().toISOString(),
+        budgetId: b.id,
+      })
+    } catch (error) {
+      console.error('[electro-crm] Error al aceptar el presupuesto:', error)
+      toast.error('No se pudo crear la venta. Revisa el stock disponible.')
+      return
+    }
     toast.success('✅ Presupuesto aceptado. La venta ha sido creada automáticamente.')
   }
 

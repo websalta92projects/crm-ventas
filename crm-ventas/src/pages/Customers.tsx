@@ -11,7 +11,7 @@ import { useSalesStore } from '../store/salesStore'
 import { saleTotal } from '../utils/sale'
 import type { Customer } from '../types'
 
-export default function Customers() {
+export default function Customers({ refreshKey = 0 }: { refreshKey?: number }) {
   const customers = useSalesStore((s) => s.customers)
   const sales = useSalesStore((s) => s.sales)
   const removeCustomer = useSalesStore((s) => s.removeCustomer)
@@ -37,7 +37,7 @@ export default function Customers() {
         c.email.toLowerCase().includes(q) ||
         c.phone.toLowerCase().includes(q),
     )
-  }, [customers, query])
+  }, [customers, query, refreshKey])
 
   // Paginación: 6 clientes por página
   const PAGE_SIZE = 6
@@ -70,8 +70,13 @@ export default function Customers() {
 
   const handleDelete = () => {
     if (!deleting) return
-    removeCustomer(deleting.id)
-    toast('Cliente eliminado', { icon: '🗑️' })
+    try {
+      removeCustomer(deleting.id)
+      toast('Cliente eliminado', { icon: '🗑️' })
+    } catch (error) {
+      console.error('[electro-crm] Error al eliminar el cliente:', error)
+      toast.error('No se pudo eliminar el cliente.')
+    }
   }
 
   return (

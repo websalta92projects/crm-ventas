@@ -17,8 +17,13 @@ export default function RecentSales() {
   const customerById = useMemo(() => new Map(customers.map((c) => [c.id, c])), [customers])
 
   const handleRemove = (sale: Sale) => {
-    removeSale(sale.id)
-    toast('Venta eliminada', { icon: '🗑️' })
+    try {
+      removeSale(sale.id)
+      toast('Venta eliminada', { icon: '🗑️' })
+    } catch (error) {
+      console.error('[electro-crm] Error al eliminar la venta:', error)
+      toast.error('No se pudo eliminar la venta.')
+    }
   }
 
   return (
