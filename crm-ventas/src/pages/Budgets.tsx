@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from 'react'
+import { useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import toast from 'react-hot-toast'
 import {
@@ -16,6 +16,9 @@ import {
 import BudgetFormModal from '../components/budgets/BudgetFormModal'
 import StatusBadge from '../components/sales/StatusBadge'
 import ConfirmModal from '../components/products/ConfirmModal'
+import ActionButton from '../components/ui/ActionButton'
+import ActionsMenu, { type ActionItem } from '../components/ui/ActionsMenu'
+import { useMediaQuery } from '../hooks/useMediaQuery'
 import { useSalesStore } from '../store/salesStore'
 import { useConfigStore } from '../store/configStore'
 import { formatDateOnly, formatMoney } from '../utils/format'
@@ -38,6 +41,9 @@ export default function Budgets({ onCreateSale }: BudgetsProps) {
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<Budget | null>(null)
   const [deleting, setDeleting] = useState<Budget | null>(null)
+  const [rejecting, setRejecting] = useState<Budget | null>(null)
+
+  const isMobile = useMediaQuery('(max-width: 767px)')
 
   const customerById = useMemo(() => new Map(customers.map((c) => [c.id, c])), [customers])
 
@@ -127,6 +133,12 @@ export default function Budgets({ onCreateSale }: BudgetsProps) {
     toast('Presupuesto eliminado', { icon: '🗑️' })
   }
 
+  // Rechazar presupuesto requiere confirmación (acción crítica)
+  const handleReject = () => {
+    if (!rejecting) return
+    changeStatus(rejecting, 'rechazado', 'Presupuesto rechazado')
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -182,7 +194,101 @@ export default function Budgets({ onCreateSale }: BudgetsProps) {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((b) => (
+              {filtered.map((b) => {
+                // Acciones disponibles según el estado del presupuesto
+                const actions: ActionItem[] = []
+                actions.push({
+                  key: 'pdf',
+                  icon: <FileText className="h-4 w-4 text-emerald-300" />,
+                  label: 'PDF',
+                  onClick: () => handlePdf(b),
+                })
+                actions.push({
+                  key: 'wa',
+                  icon: <MessageCircle className="h-4 w-4 text-green-300" />,
+                  label: 'WhatsApp',
+                  onClick: () => whatsappBudget(b),
+                })
+                actions.push({
+                  key: 'copy',
+                  icon: <ClipboardCopy className="h-4 w-4" />,
+                  label: 'Copiar',
+                  onClick: () => copyBudget(b),
+                })
+
+                if (b.status === 'borrador') {
+                  actions.push({
+                    key: 'send',
+                    icon: <Send className="h-4 w-4 text-sky-300" />,
+                    label: 'Enviar',
+                    onClick: () => changeStatus(b, 'enviado', 'Presupuesto enviado al cliente 📤'),
+                  })
+                  actions.push({
+                    key: 'edit',
+                    icon: <Pencil className="h-4 w-4" />,
+                    label: 'Editar',
+                    onClick: () => openEdit(b),
+                  })
+                }
+
+                if (b.status === 'enviado') {
+                  actions.push({
+                    key: 'accept',
+                    icon: <CheckCheck className="h-4 w-4 text-emerald-300" />,
+                    label: 'Aceptar',
+                    onClick: () => changeStatus(b, 'aceptado', 'Presupuesto aceptado 🎉'),
+                  })
+                  actions.push({
+                    key: 'reject',
+                    icon: <XCircle className="h-4 w-4 text-rose-300" />,
+                    label: 'Rechazar',
+                    danger: true,
+                    onClick: () => setRejecting(b),
+                  })
+                  actions.push({
+                    key: 'edit',
+                    icon: <Pencil className="h-4 w-4" />,
+                    label: 'Editar',
+                    onClick: () => openEdit(b),
+                  })
+                }
+
+                if (b.status === 'aceptado' && onCreateSale) {
+                  if (b.hasSale) {
+                    actions.push({
+                      key: 'sold',
+                      icon: <ShoppingCart className="h-4 w-4" />,
+                      label: 'Ya vendido',
+                      disabled: true,
+                    })
+                  } else {
+                    actions.push({
+                      key: 'sell',
+                      icon: <ShoppingCart className="h-4 w-4 text-sky-300" />,
+                      label: 'Vender',
+                      onClick: () => onCreateSale(b.id),
+                    })
+                  }
+                }
+
+                if (b.status === 'rechazado') {
+                  actions.push({
+                    key: 'edit',
+                    icon: <Pencil className="h-4 w-4" />,
+                    label: 'Editar y reenviar',
+                    onClick: () => openEdit(b),
+                  })
+                }
+
+                actions.push({
+                  key: 'delete',
+                  icon: <Trash2 className="h-4 w-4" />,
+                  label: 'Eliminar',
+                  danger: true,
+                  onClick: () => setDeleting(b),
+                })
+
+                return (
                 <motion.tr
                   key={b.id}
                   initial={{ opacity: 0 }}
@@ -210,84 +316,22 @@ export default function Budgets({ onCreateSale }: BudgetsProps) {
                   </td>
                   <td className="px-4 py-3 text-slate-400">{formatDateOnly(b.updatedAt)}</td>
                   <td className="px-5 py-3">
-                    <div className="flex justify-end gap-1">
-                      <ActionBtn title="Descargar PDF" onClick={() => handlePdf(b)}>
-                        <FileText className="h-4 w-4 text-emerald-300" />
-                      </ActionBtn>
-                      <ActionBtn title="Enviar por WhatsApp" onClick={() => whatsappBudget(b)}>
-                        <MessageCircle className="h-4 w-4 text-green-300" />
-                      </ActionBtn>
-                      <ActionBtn title="Copiar a WhatsApp" onClick={() => copyBudget(b)}>
-                        <ClipboardCopy className="h-4 w-4" />
-                      </ActionBtn>
-
-                      {b.status === 'borrador' && (
-                        <>
-                          <ActionBtn
-                            title="Enviar presupuesto"
-                            onClick={() =>
-                              changeStatus(b, 'enviado', 'Presupuesto enviado al cliente 📤')
-                            }
-                          >
-                            <Send className="h-4 w-4 text-sky-300" />
-                          </ActionBtn>
-                          <ActionBtn title="Editar" onClick={() => openEdit(b)}>
-                            <Pencil className="h-4 w-4" />
-                          </ActionBtn>
-                        </>
-                      )}
-
-                      {b.status === 'enviado' && (
-                        <>
-                          <ActionBtn
-                            title="Aceptar presupuesto"
-                            onClick={() => changeStatus(b, 'aceptado', 'Presupuesto aceptado 🎉')}
-                          >
-                            <CheckCheck className="h-4 w-4 text-emerald-300" />
-                          </ActionBtn>
-                          <ActionBtn
-                            title="Rechazar presupuesto"
-                            onClick={() => changeStatus(b, 'rechazado', 'Presupuesto rechazado')}
-                          >
-                            <XCircle className="h-4 w-4 text-rose-300" />
-                          </ActionBtn>
-                          <ActionBtn title="Editar" onClick={() => openEdit(b)}>
-                            <Pencil className="h-4 w-4" />
-                          </ActionBtn>
-                        </>
-                      )}
-
-                      {b.status === 'aceptado' && onCreateSale && (
-                        b.hasSale ? (
-                          <ActionBtn
-                            title="Este presupuesto ya generó una venta"
-                            disabled
-                          >
-                            <ShoppingCart className="h-4 w-4" />
-                          </ActionBtn>
-                        ) : (
-                          <ActionBtn
-                            title="Crear venta desde este presupuesto"
-                            onClick={() => onCreateSale(b.id)}
-                          >
-                            <ShoppingCart className="h-4 w-4 text-sky-300" />
-                          </ActionBtn>
-                        )
-                      )}
-
-                      {b.status === 'rechazado' && (
-                        <ActionBtn title="Editar y reenviar" onClick={() => openEdit(b)}>
-                          <Pencil className="h-4 w-4" />
-                        </ActionBtn>
-                      )}
-
-                      <ActionBtn title="Eliminar" danger onClick={() => setDeleting(b)}>
-                        <Trash2 className="h-4 w-4" />
-                      </ActionBtn>
-                    </div>
+                    {isMobile ? (
+                      <div className="flex justify-end">
+                        <ActionsMenu items={actions} />
+                      </div>
+                    ) : (
+                      <div className="flex flex-wrap justify-end gap-1.5">
+                        {actions.map((a) => {
+                          const { key, ...rest } = a
+                          return <ActionButton key={key} {...rest} />
+                        })}
+                      </div>
+                    )}
                   </td>
                 </motion.tr>
-              ))}
+              );
+              })}
               {filtered.length === 0 && (
                 <tr>
                   <td colSpan={7} className="py-12 text-center text-slate-500">
@@ -313,37 +357,19 @@ export default function Budgets({ onCreateSale }: BudgetsProps) {
         onConfirm={handleDelete}
         onClose={() => setDeleting(null)}
       />
+
+      <ConfirmModal
+        open={rejecting !== null}
+        title="Rechazar presupuesto"
+        message={
+          rejecting
+            ? `¿Seguro que quieres rechazar el presupuesto #${rejecting.number}? Esta acción no se puede deshacer.`
+            : ''
+        }
+        onConfirm={handleReject}
+        onClose={() => setRejecting(null)}
+      />
     </motion.div>
   )
 }
 
-function ActionBtn({
-  children,
-  onClick,
-  title,
-  danger = false,
-  disabled = false,
-}: {
-  children: ReactNode
-  onClick?: () => void
-  title: string
-  danger?: boolean
-  disabled?: boolean
-}) {
-  return (
-    <button
-      onClick={onClick}
-      title={title}
-      disabled={disabled}
-      className={`rounded-lg p-1.5 transition-colors ${
-        disabled
-          ? 'cursor-not-allowed text-slate-600'
-          : danger
-            ? 'text-slate-400 hover:bg-rose-500/15 hover:text-rose-400'
-            : 'text-slate-400 hover:bg-white/10 hover:text-white'
-      }`}
-    >
-      {children}
-    </button>
-  )
-}

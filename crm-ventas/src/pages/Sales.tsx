@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import toast from 'react-hot-toast'
 import {
@@ -17,6 +17,9 @@ import {
 import SaleFormModal from '../components/sales/SaleFormModal'
 import StatusBadge from '../components/sales/StatusBadge'
 import ConfirmModal from '../components/products/ConfirmModal'
+import ActionButton from '../components/ui/ActionButton'
+import ActionsMenu, { type ActionItem } from '../components/ui/ActionsMenu'
+import { useMediaQuery } from '../hooks/useMediaQuery'
 import { useSalesStore } from '../store/salesStore'
 import { useConfigStore } from '../store/configStore'
 import { formatDateTime, formatDateOnly, formatMoney } from '../utils/format'
@@ -45,6 +48,9 @@ export default function Sales({ initialBudgetId, onBudgetConsumed }: SalesProps)
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<Sale | null>(null)
   const [deleting, setDeleting] = useState<Sale | null>(null)
+  const [canceling, setCanceling] = useState<Sale | null>(null)
+
+  const isMobile = useMediaQuery('(max-width: 767px)')
 
   const customerById = useMemo(() => new Map(customers.map((c) => [c.id, c])), [customers])
 
@@ -114,6 +120,12 @@ export default function Sales({ initialBudgetId, onBudgetConsumed }: SalesProps)
     if (!deleting) return
     removeSale(deleting.id)
     toast('Venta eliminada (stock restaurado)', { icon: '🗑️' })
+  }
+
+  // Cancelar venta requiere confirmación (acción crítica: restaura stock)
+  const handleCancel = () => {
+    if (!canceling) return
+    changeStatus(canceling, 'cancelado', 'Venta cancelada 🚫')
   }
 
   // Recibo PDF: usa el folio de la configuración y lo incrementa automáticamente
@@ -273,6 +285,66 @@ export default function Sales({ initialBudgetId, onBudgetConsumed }: SalesProps)
                 const customer = customerById.get(sale.customerId)
                 const units = saleUnits(sale)
                 const first = sale.items[0]
+
+                // Acciones disponibles según el estado de la venta
+                const actions: ActionItem[] = []
+                if (sale.status === 'pendiente_pago') {
+                  actions.push({
+                    key: 'charge',
+                    icon: <Banknote className="h-4 w-4 text-emerald-300" />,
+                    label: 'Cobrar',
+                    onClick: () => changeStatus(sale, 'pagado', 'Cobro registrado 💰'),
+                  })
+                }
+                if (sale.status === 'pagado') {
+                  actions.push({
+                    key: 'receipt',
+                    icon: <FileText className="h-4 w-4 text-emerald-300" />,
+                    label: 'Recibo PDF',
+                    onClick: () => handleReceiptPdf(sale),
+                  })
+                  actions.push({
+                    key: 'copy',
+                    icon: <ClipboardCopy className="h-4 w-4 text-slate-300" />,
+                    label: 'Copiar',
+                    onClick: () => copyReceipt(sale),
+                  })
+                  actions.push({
+                    key: 'wa',
+                    icon: <MessageCircle className="h-4 w-4 text-green-300" />,
+                    label: 'WhatsApp',
+                    onClick: () => handleReceiptWhatsApp(sale),
+                  })
+                  actions.push({
+                    key: 'deliver',
+                    icon: <PackageCheck className="h-4 w-4 text-sky-300" />,
+                    label: 'Entregar',
+                    onClick: () => changeStatus(sale, 'entregado', 'Venta marcada como Entregada 📦'),
+                  })
+                }
+                actions.push({
+                  key: 'edit',
+                  icon: <Pencil className="h-4 w-4" />,
+                  label: 'Editar',
+                  onClick: () => openEdit(sale),
+                })
+                if (sale.status !== 'cancelado') {
+                  actions.push({
+                    key: 'cancel',
+                    icon: <XCircle className="h-4 w-4 text-rose-300" />,
+                    label: 'Cancelar',
+                    danger: true,
+                    onClick: () => setCanceling(sale),
+                  })
+                }
+                actions.push({
+                  key: 'delete',
+                  icon: <Trash2 className="h-4 w-4" />,
+                  label: 'Eliminar',
+                  danger: true,
+                  onClick: () => setDeleting(sale),
+                })
+
                 return (
                   <motion.tr
                     key={sale.id}
@@ -305,58 +377,18 @@ export default function Sales({ initialBudgetId, onBudgetConsumed }: SalesProps)
                       {formatMoney(saleProfit(sale))}
                     </td>
                     <td className="px-5 py-3">
-                      <div className="flex justify-end gap-1">
-                        {sale.status === 'pendiente_pago' && (
-                          <ActionBtn
-                            title="Registrar cobro"
-                            onClick={() =>
-                              changeStatus(sale, 'pagado', 'Cobro registrado 💰')
-                            }
-                          >
-                            <Banknote className="h-4 w-4 text-emerald-300" />
-                          </ActionBtn>
-                        )}
-                        {sale.status === 'pagado' && (
-                          <>
-                            <ActionBtn
-                              title="Recibo PDF"
-                              onClick={() => handleReceiptPdf(sale)}
-                            >
-                              <FileText className="h-4 w-4 text-emerald-300" />
-                            </ActionBtn>
-                            <ActionBtn
-                              title="Copiar texto del recibo"
-                              onClick={() => copyReceipt(sale)}
-                            >
-                              <ClipboardCopy className="h-4 w-4 text-slate-300" />
-                            </ActionBtn>
-                            <ActionBtn
-                              title="Enviar recibo por WhatsApp"
-                              onClick={() => handleReceiptWhatsApp(sale)}
-                            >
-                              <MessageCircle className="h-4 w-4 text-green-300" />
-                            </ActionBtn>
-                            <ActionBtn
-                              title="Marcar entregado"
-                              onClick={() =>
-                                changeStatus(sale, 'entregado', 'Venta marcada como Entregada 📦')
-                              }
-                            >
-                              <PackageCheck className="h-4 w-4 text-sky-300" />
-                            </ActionBtn>
-                          </>
-                        )}
-                        <ActionBtn title="Editar venta" onClick={() => openEdit(sale)}>
-                          <Pencil className="h-4 w-4" />
-                        </ActionBtn>
-                        <ActionBtn
-                          title="Eliminar venta"
-                          danger
-                          onClick={() => setDeleting(sale)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </ActionBtn>
-                      </div>
+                      {isMobile ? (
+                        <div className="flex justify-end">
+                          <ActionsMenu items={actions} />
+                        </div>
+                      ) : (
+                        <div className="flex flex-wrap justify-end gap-1.5">
+                          {actions.map((a) => {
+                            const { key, ...rest } = a
+                            return <ActionButton key={key} {...rest} />
+                          })}
+                        </div>
+                      )}
                     </td>
                   </motion.tr>
                 )
@@ -393,30 +425,19 @@ export default function Sales({ initialBudgetId, onBudgetConsumed }: SalesProps)
         onConfirm={handleDelete}
         onClose={() => setDeleting(null)}
       />
+
+      <ConfirmModal
+        open={canceling !== null}
+        title="Cancelar venta"
+        message={
+          canceling
+            ? `¿Seguro que quieres cancelar esta venta de ${saleUnits(canceling)} unidad(es)? El stock se restaurará.`
+            : ''
+        }
+        onConfirm={handleCancel}
+        onClose={() => setCanceling(null)}
+      />
     </motion.div>
   )
 }
 
-function ActionBtn({
-  children,
-  onClick,
-  title,
-  danger = false,
-}: {
-  children: ReactNode
-  onClick: () => void
-  title: string
-  danger?: boolean
-}) {
-  return (
-    <button
-      onClick={onClick}
-      title={title}
-      className={`rounded-lg p-1.5 text-slate-400 transition-colors ${
-        danger ? 'hover:bg-rose-500/15 hover:text-rose-400' : 'hover:bg-white/10 hover:text-white'
-      }`}
-    >
-      {children}
-    </button>
-  )
-}
