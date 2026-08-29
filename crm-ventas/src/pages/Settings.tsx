@@ -230,7 +230,7 @@ export default function Settings() {
           </div>
         </header>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
           <Field label="Color principal">
             <div className="flex items-center gap-2">
               <input
@@ -263,6 +263,24 @@ export default function Settings() {
               }
               className={inputClass}
             />
+          </Field>
+          <Field label="IVA por defecto (%)">
+            <input
+              type="number"
+              min={0}
+              max={100}
+              step={0.01}
+              value={config.taxRate}
+              onChange={(e) =>
+                updateConfig({
+                  taxRate: Math.min(100, Math.max(0, parseFloat(e.target.value) || 0)),
+                })
+              }
+              className={inputClass}
+            />
+            <p className="mt-1 text-[11px] text-muted">
+              Se aplica a presupuestos/recibos nuevos (ajustable por presupuesto)
+            </p>
           </Field>
         </div>
 

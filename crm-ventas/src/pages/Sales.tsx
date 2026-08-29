@@ -28,7 +28,7 @@ import { useConfigStore } from '../store/configStore'
 import { formatDateTime, formatDateOnly, formatMoney, formatMoneyCompact } from '../utils/format'
 import { SALE_STATUSES, STATUS_META } from '../utils/saleStatus'
 import { saleProfit, saleTotal, saleUnits } from '../utils/sale'
-import { buildReceiptText, buildWhatsAppLink, TAX_RATE } from '../utils/budget'
+import { buildReceiptText, buildWhatsAppLink } from '../utils/budget'
 import { generateReceiptPDF } from '../utils/documentPDF'
 import type { Sale, SaleStatus } from '../types'
 
@@ -258,8 +258,10 @@ export default function Sales({ initialBudgetId, onBudgetConsumed, refreshKey }:
     const config = useConfigStore.getState().config
     const customer = customerById.get(sale.customerId)
     const number = sale.receiptNumber ?? config.receiptCounter
+    const includeTax = sale.includeTax ?? true
+    const taxRate = sale.taxRate ?? config.taxRate ?? 21
     const subtotal = saleTotal(sale)
-    const tax = subtotal * TAX_RATE
+    const tax = includeTax ? subtotal * (taxRate / 100) : 0
     return buildReceiptText({
       numberLabel: String(number),
       customerName: customer?.name ?? 'Sin cliente',
@@ -274,6 +276,8 @@ export default function Sales({ initialBudgetId, onBudgetConsumed, refreshKey }:
       subtotal,
       tax,
       total: subtotal + tax,
+      includeTax,
+      taxRate,
       footer: config.footer,
     })
   }

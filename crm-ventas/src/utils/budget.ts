@@ -1,12 +1,19 @@
 import { LOCALE } from './format'
 import type { BudgetItem } from '../types'
 
-// Impuesto estándar de los presupuestos (IVA 21%)
+// Impuesto estándar de los presupuestos (IVA 21% por defecto, configurable por presupuesto)
 export const TAX_RATE = 0.21
 
-export function budgetTotals(items: { unitPrice: number; quantity: number }[]) {
+// Calcula subtotal, IVA y total. Si includeTax es false, el IVA es 0.
+// taxRate se expresa en porcentaje (ej. 21 = 21%).
+export function budgetTotals(
+  items: { unitPrice: number; quantity: number }[],
+  opts?: { includeTax?: boolean; taxRate?: number },
+) {
   const subtotal = items.reduce((acc, i) => acc + i.unitPrice * i.quantity, 0)
-  const tax = subtotal * TAX_RATE
+  const includeTax = opts?.includeTax ?? true
+  const rate = (opts?.taxRate ?? Math.round(TAX_RATE * 100)) / 100
+  const tax = includeTax ? subtotal * rate : 0
   return { subtotal, tax, total: subtotal + tax }
 }
 
@@ -29,6 +36,10 @@ export interface DocumentTextOptions {
   subtotal: number
   tax: number
   total: number
+  // IVA configurable por documento: si es false, NO se muestra la línea de IVA
+  includeTax: boolean
+  // Porcentaje de IVA usado (ej. 21 = 21%)
+  taxRate: number
   // Pie de página personalizado (si viene vacío, se usa DEFAULT_FOOTER)
   footer?: string
 }
@@ -36,7 +47,21 @@ export interface DocumentTextOptions {
 // Texto PLANO para WhatsApp: sin emojis, sin asteriscos, sin subrayados
 // y sin separadores con caracteres especiales. Solo texto simple.
 function buildDocumentText(opts: DocumentTextOptions & { docType: string }): string {
-  const { docType, numberLabel, customerName, date, items, subtotal, tax, total, footer } = opts
+  const {
+    docType,
+    numberLabel,
+    customerName,
+    date,
+    items,
+    subtotal,
+    tax,
+    total,
+    includeTax,
+    taxRate,
+    footer,
+  } = opts
+  const taxLine =
+    includeTax && tax > 0 ? [`Impuestos (${Math.round(taxRate)}%): ${plainMoney(tax)}`] : []
   const lines = [
     `${docType} #${numberLabel}`,
     `Cliente: ${customerName}`,
@@ -48,7 +73,7 @@ function buildDocumentText(opts: DocumentTextOptions & { docType: string }): str
     ),
     '',
     `Subtotal: ${plainMoney(subtotal)}`,
-    `Impuestos (${Math.round(TAX_RATE * 100)}%): ${plainMoney(tax)}`,
+    ...taxLine,
     `TOTAL: ${plainMoney(total)}`,
     '',
     footer?.trim() || DEFAULT_FOOTER,

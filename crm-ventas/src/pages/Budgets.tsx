@@ -25,7 +25,7 @@ import { useSalesStore } from '../store/salesStore'
 import { useConfigStore } from '../store/configStore'
 import { formatDateOnly, formatMoney, formatMoneyCompact } from '../utils/format'
 import { BUDGET_STATUSES, BUDGET_STATUS_META } from '../utils/budgetStatus'
-import { buildBudgetText, buildWhatsAppLink, TAX_RATE } from '../utils/budget'
+import { buildBudgetText, buildWhatsAppLink } from '../utils/budget'
 import { generateBudgetPDF } from '../utils/documentPDF'
 import type { Budget, BudgetStatus } from '../types'
 
@@ -103,6 +103,8 @@ export default function Budgets({ onCreateSale, refreshKey }: BudgetsProps) {
         subtotal: b.subtotal,
         tax: b.tax,
         total: b.total,
+        includeTax: b.includeTax ?? true,
+        taxRate: b.taxRate ?? 21,
         footer: useConfigStore.getState().config.footer,
       })
       await navigator.clipboard.writeText(text)
@@ -145,6 +147,8 @@ export default function Budgets({ onCreateSale, refreshKey }: BudgetsProps) {
       subtotal: b.subtotal,
       tax: b.tax,
       total: b.total,
+      includeTax: b.includeTax ?? true,
+      taxRate: b.taxRate ?? 21,
       footer: useConfigStore.getState().config.footer,
     })
     window.open(buildWhatsAppLink(customer.phone, text), '_blank')
@@ -502,10 +506,14 @@ export default function Budgets({ onCreateSale, refreshKey }: BudgetsProps) {
           status={<StatusBadge status={detail.status} />}
           lines={[
             { label: 'Subtotal', value: formatMoney(detail.subtotal) },
-            {
-              label: `Impuestos (${Math.round(TAX_RATE * 100)}%)`,
-              value: formatMoney(detail.tax),
-            },
+            ...(detail.includeTax !== false && detail.tax > 0
+              ? [
+                  {
+                    label: `Impuestos (${Math.round(detail.taxRate ?? 21)}%)`,
+                    value: formatMoney(detail.tax),
+                  },
+                ]
+              : []),
             { label: 'Total', value: formatMoney(detail.total), strong: true },
           ]}
           actions={buildDetailActions(detail)}

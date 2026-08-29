@@ -31,6 +31,9 @@ export interface Sale {
   date: string
   budgetId?: string
   receiptNumber?: number
+  // Configuración de IVA heredada del presupuesto (o por defecto) para el recibo
+  includeTax?: boolean
+  taxRate?: number
 }
 
 // Estados de un presupuesto
@@ -55,6 +58,9 @@ export interface Budget {
   status: BudgetStatus
   createdAt: string
   updatedAt: string
+  // IVA configurable POR presupuesto (no global)
+  includeTax: boolean
+  taxRate: number
   // true cuando el presupuesto ya generó una venta (evita duplicados)
   hasSale?: boolean
 }
@@ -80,6 +86,8 @@ export interface CompanyConfig {
   footer: string
   budgetCounter: number
   receiptCounter: number
+  // Porcentaje de IVA por defecto para presupuestos/recibos nuevos
+  taxRate: number
 }
 
 export interface TopProduct {

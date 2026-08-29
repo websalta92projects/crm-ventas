@@ -35,6 +35,9 @@ interface SalesStore {
     date: string
     budgetId?: string
     id?: string
+    // IVA del recibo (si viene de un presupuesto, se hereda de él)
+    includeTax?: boolean
+    taxRate?: number
   }) => void
   removeSale: (id: string) => void
   setSaleStatus: (id: string, status: SaleStatus) => void
@@ -51,6 +54,9 @@ interface SalesStore {
     items: { productId: string; quantity: number }[]
     status: BudgetStatus
     id?: string
+    // IVA configurable por presupuesto
+    includeTax: boolean
+    taxRate: number
   }) => void
   removeBudget: (id: string) => void
   setBudgetStatus: (id: string, status: BudgetStatus) => void
@@ -121,6 +127,10 @@ export const useSalesStore = create<SalesStore>()(
             .filter((x): x is SaleItem => x !== null)
           if (items.length === 0) return state
 
+          // IVA heredado del presupuesto origen (o por defecto de Configuración)
+          const sourceBudget = data.budgetId
+            ? state.budgets.find((b) => b.id === data.budgetId)
+            : undefined
           const sale: Sale = {
             id: data.id ?? uid(),
             items,
@@ -128,6 +138,10 @@ export const useSalesStore = create<SalesStore>()(
             status: data.status,
             date: data.date,
             budgetId: data.budgetId,
+            includeTax: sourceBudget ? sourceBudget.includeTax : data.includeTax ?? true,
+            taxRate: sourceBudget
+              ? sourceBudget.taxRate
+              : data.taxRate ?? useConfigStore.getState().config.taxRate ?? 21,
           }
 
           // Si la venta nace de un presupuesto, ese presupuesto pasa a "Aceptado"
@@ -310,7 +324,10 @@ export const useSalesStore = create<SalesStore>()(
             .filter((x): x is BudgetItem => x !== null)
           if (items.length === 0) return state
 
-          const { subtotal, tax, total } = budgetTotals(items)
+          const { subtotal, tax, total } = budgetTotals(items, {
+            includeTax: data.includeTax,
+            taxRate: data.taxRate,
+          })
 
           if (data.id) {
             return {
@@ -324,6 +341,8 @@ export const useSalesStore = create<SalesStore>()(
                       tax,
                       total,
                       status: data.status,
+                      includeTax: data.includeTax,
+                      taxRate: data.taxRate,
                       updatedAt: nowIso(),
                     }
                   : b,
@@ -341,6 +360,8 @@ export const useSalesStore = create<SalesStore>()(
             tax,
             total,
             status: data.status,
+            includeTax: data.includeTax,
+            taxRate: data.taxRate,
             createdAt: nowIso(),
             updatedAt: nowIso(),
           }
@@ -405,8 +426,8 @@ export const useSalesStore = create<SalesStore>()(
     },
     {
       name: 'electro-crm-v1',
-      // version 7: estado validado al rehidratar + dataVersion (force refresh)
-      version: 7,
+      // version 8: IVA configurable por presupuesto (includeTax + taxRate)
+      version: 8,
       // Solo se guardan los datos (las funciones y dataVersion no se persisten)
       partialize: (state) => ({
         products: state.products,
@@ -424,7 +445,13 @@ export const useSalesStore = create<SalesStore>()(
           products: Array.isArray(p.products) ? p.products : initialProducts,
           sales: Array.isArray(p.sales) ? p.sales : generateSeedSales(),
           customers: Array.isArray(p.customers) ? p.customers : initialCustomers,
-          budgets: Array.isArray(p.budgets) ? p.budgets : initialBudgets,
+          budgets: Array.isArray(p.budgets)
+            ? p.budgets.map((b) => ({
+                ...b,
+                includeTax: b.includeTax ?? true,
+                taxRate: b.taxRate ?? 21,
+              }))
+            : initialBudgets,
         }
       },
       onRehydrateStorage: () => (state, error) => {

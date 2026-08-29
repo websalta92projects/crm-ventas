@@ -14,6 +14,7 @@ export const DEFAULT_CONFIG: CompanyConfig = {
   footer: 'Generado con ElectroCRM',
   budgetCounter: 1001,
   receiptCounter: 1458,
+  taxRate: 21,
 }
 
 interface ConfigStore {
@@ -54,6 +55,16 @@ export const useConfigStore = create<ConfigStore>()(
     {
       name: 'company-config',
       version: 1,
+      // Merge con DEFAULT_CONFIG: las configs guardadas en versiones anteriores
+      // no tienen taxRate y aquí se completa con el valor por defecto (21)
+      merge: (persisted, current) => ({
+        ...current,
+        ...(persisted as object),
+        config: {
+          ...DEFAULT_CONFIG,
+          ...((persisted as { config?: Partial<CompanyConfig> } | undefined)?.config ?? {}),
+        },
+      }),
     },
   ),
 )

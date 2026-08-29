@@ -15,7 +15,7 @@ import {
 import { useSalesStore } from '../../store/salesStore'
 import { useConfigStore } from '../../store/configStore'
 import { formatMoney, formatDateOnly } from '../../utils/format'
-import { budgetTotals, buildBudgetText, buildWhatsAppLink, TAX_RATE } from '../../utils/budget'
+import { budgetTotals, buildBudgetText, buildWhatsAppLink } from '../../utils/budget'
 import { generateDocumentPDF, getDocumentPDFBlob } from '../../utils/documentPDF'
 import { trySharePdf } from '../../utils/pdfShare'
 import CustomerFormModal from '../customers/CustomerFormModal'
@@ -53,6 +53,9 @@ export default function BudgetFormModal({ open, budget, onClose }: BudgetFormMod
   const [scannerManual, setScannerManual] = useState(false)
   // Código de barras escaneado sin producto registrado (precarga el modal de producto)
   const [preloadBarcode, setPreloadBarcode] = useState('')
+  // IVA configurable POR presupuesto (por defecto: activado con el % de Configuración)
+  const [includeTax, setIncludeTax] = useState(true)
+  const [taxRate, setTaxRate] = useState(21)
 
   // Carga los datos al abrir
   useEffect(() => {
@@ -60,9 +63,13 @@ export default function BudgetFormModal({ open, budget, onClose }: BudgetFormMod
     if (budget) {
       setCustomerId(budget.customerId)
       setCart(budget.items.map((i) => ({ productId: i.productId, quantity: i.quantity })))
+      setIncludeTax(budget.includeTax ?? true)
+      setTaxRate(budget.taxRate ?? useConfigStore.getState().config.taxRate ?? 21)
     } else {
       setCustomerId('')
       setCart([])
+      setIncludeTax(true)
+      setTaxRate(useConfigStore.getState().config.taxRate ?? 21)
     }
     setProductQuery('')
     setShowProducts(false)
@@ -188,7 +195,10 @@ export default function BudgetFormModal({ open, budget, onClose }: BudgetFormMod
     [cart, productById],
   )
 
-  const { subtotal, tax, total } = budgetTotals(lines.map((l) => ({ unitPrice: l.product.price, quantity: l.qty })))
+  const { subtotal, tax, total } = budgetTotals(
+    lines.map((l) => ({ unitPrice: l.product.price, quantity: l.qty })),
+    { includeTax, taxRate },
+  )
   const customer = customerId ? customerById.get(customerId) : undefined
 
   const selectedCustomerName = customer?.name ?? 'Sin cliente'
@@ -214,7 +224,7 @@ export default function BudgetFormModal({ open, budget, onClose }: BudgetFormMod
     const config = useConfigStore.getState().config
     const number = budget?.number ?? config.budgetCounter
     const items = currentItems()
-    const { subtotal, tax, total } = budgetTotals(items)
+    const { subtotal, tax, total } = budgetTotals(items, { includeTax, taxRate })
     const text = buildCurrentText(number)
 
     // 1. Marca el presupuesto como Enviado
@@ -224,6 +234,8 @@ export default function BudgetFormModal({ open, budget, onClose }: BudgetFormMod
         customerId,
         items: lines.map((l) => ({ productId: l.product.id, quantity: l.qty })),
         status: 'enviado',
+        includeTax,
+        taxRate,
       })
     } catch (error) {
       console.error('[electro-crm] Error al enviar el presupuesto:', error)
@@ -249,6 +261,8 @@ export default function BudgetFormModal({ open, budget, onClose }: BudgetFormMod
         subtotal,
         tax,
         total,
+        includeTax,
+        taxRate,
         config,
       })
       const shared = await trySharePdf(text, blob, `presupuesto-${number}.pdf`)
@@ -266,7 +280,7 @@ export default function BudgetFormModal({ open, budget, onClose }: BudgetFormMod
   // Texto unificado: '📋 Copiar' y '📤 WhatsApp' generan EXACTAMENTE el mismo mensaje
   const buildCurrentText = (number?: number): string => {
     const items = currentItems()
-    const { subtotal, tax, total } = budgetTotals(items)
+    const { subtotal, tax, total } = budgetTotals(items, { includeTax, taxRate })
     return buildBudgetText({
       numberLabel: number ? String(number) : budget ? String(budget.number) : 'NUEVO',
       customerName: selectedCustomerName,
@@ -275,6 +289,8 @@ export default function BudgetFormModal({ open, budget, onClose }: BudgetFormMod
       subtotal,
       tax,
       total,
+      includeTax,
+      taxRate,
       footer: useConfigStore.getState().config.footer,
     })
   }
@@ -309,7 +325,7 @@ export default function BudgetFormModal({ open, budget, onClose }: BudgetFormMod
     }
     const config = useConfigStore.getState().config
     const items = currentItems()
-    const { subtotal, tax, total } = budgetTotals(items)
+    const { subtotal, tax, total } = budgetTotals(items, { includeTax, taxRate })
     const number = budget?.number ?? config.budgetCounter
     try {
       await generateDocumentPDF({
@@ -326,6 +342,8 @@ export default function BudgetFormModal({ open, budget, onClose }: BudgetFormMod
         subtotal,
         tax,
         total,
+        includeTax,
+        taxRate,
         config,
       })
       toast.success('PDF generado 📄')
@@ -381,7 +399,7 @@ export default function BudgetFormModal({ open, budget, onClose }: BudgetFormMod
                       {budget ? `Editar presupuesto #${budget.number}` : 'Nuevo presupuesto'}
                     </h3>
                     <p className="text-xs text-secondary">
-                      Impuestos del {Math.round(TAX_RATE * 100)}% incluidos
+                      {includeTax ? `IVA del ${Math.round(taxRate)}% incluido` : 'Sin IVA'}
                     </p>
                   </div>
                 </div>
@@ -665,14 +683,36 @@ export default function BudgetFormModal({ open, budget, onClose }: BudgetFormMod
 
               {/* Totales destacados */}
               <div className="rounded-xl border border-violet-400/20 bg-gradient-to-br from-violet-500/10 to-sky-500/10 p-4 text-sm shadow-lg shadow-violet-500/10">
+                {/* IVA configurable POR presupuesto */}
+                <div className="mb-3 flex items-center justify-between">
+                  <label className="text-xs font-semibold text-secondary">Incluir IVA</label>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={includeTax}
+                    aria-label="Incluir IVA"
+                    onClick={() => setIncludeTax((v) => !v)}
+                    className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
+                      includeTax ? 'bg-gradient-to-r from-violet-500 to-sky-500' : 'bg-slate-500/40'
+                    }`}
+                  >
+                    <span
+                      className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
+                        includeTax ? 'translate-x-5' : ''
+                      }`}
+                    />
+                  </button>
+                </div>
                 <div className="flex justify-between text-secondary">
                   <span>Subtotal</span>
                   <span className="font-semibold text-white">{formatMoney(subtotal)}</span>
                 </div>
-                <div className="mt-2 flex justify-between text-secondary">
-                  <span>Impuestos ({Math.round(TAX_RATE * 100)}%)</span>
-                  <span className="font-semibold text-secondary">{formatMoney(tax)}</span>
-                </div>
+                {includeTax && (
+                  <div className="mt-2 flex justify-between text-secondary">
+                    <span>Impuestos ({Math.round(taxRate)}%)</span>
+                    <span className="font-semibold text-secondary">{formatMoney(tax)}</span>
+                  </div>
+                )}
                 <div className="mt-2 flex justify-between border-t border-app pt-2">
                   <span className="font-semibold text-white">Total</span>
                   <span className="text-lg font-extrabold text-emerald-300">
