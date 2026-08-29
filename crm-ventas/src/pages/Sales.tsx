@@ -350,7 +350,7 @@ export default function Sales({ initialBudgetId, onBudgetConsumed }: SalesProps)
       {/* Tabla del historial completo */}
       <div className="glass overflow-hidden">
         <div className="w-full overflow-x-hidden">
-          <table className="data-table w-full min-w-[600px] text-left text-sm md:min-w-full">
+          <table className="data-table w-full text-left text-sm md:min-w-full">
             <thead>
               <tr className="border-b border-white/10 bg-white/[0.02] text-xs text-slate-500">
                 <th className="px-5 py-3 font-medium">Productos</th>
@@ -438,7 +438,7 @@ export default function Sales({ initialBudgetId, onBudgetConsumed }: SalesProps)
                     transition={{ duration: 0.2 }}
                     className="cursor-pointer border-b border-white/5 text-slate-300 last:border-0 hover:bg-white/[0.03]"
                   >
-                    <td className="max-w-[40px] px-5 py-3 md:max-w-none">
+                    <td className="min-w-[100px] max-w-[150px] px-5 py-3 md:max-w-none">
                       <span className="hidden items-center gap-2 md:flex">
                         <span className="text-lg">{first?.emoji ?? '📦'}</span>
                         <span className="truncate font-medium text-white">
@@ -459,8 +459,8 @@ export default function Sales({ initialBudgetId, onBudgetConsumed }: SalesProps)
                         )}
                       </span>
                     </td>
-                    <td className="px-4 py-3">
-                      <span className="hidden md:inline">{customerName}</span>
+                    <td className="min-w-[100px] max-w-[150px] px-4 py-3 md:max-w-none">
+                      <span className="hidden truncate md:block">{customerName}</span>
                       <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-sky-500 text-xs font-bold text-white md:hidden">
                         {(customerName[0] || '?').toUpperCase()}
                       </span>
@@ -468,29 +468,29 @@ export default function Sales({ initialBudgetId, onBudgetConsumed }: SalesProps)
                     <td className="hidden px-4 py-3 text-slate-400 md:table-cell">
                       {formatDateTime(sale.date)}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="min-w-[80px] px-4 py-3">
                       <StatusBadge status={sale.status} compact={isMobile} />
                     </td>
-                    <td className="px-4 py-3 text-xs md:text-sm">{units}</td>
-                    <td className="px-4 py-3 text-right">
-                      <span className="hidden text-sm font-semibold text-white md:inline">
+                    <td className="min-w-[60px] px-4 py-3 text-xs md:text-sm">{units}</td>
+                    <td className="min-w-[80px] px-4 py-3 text-right text-xs md:text-sm">
+                      <span className="hidden font-semibold text-white md:inline">
                         {formatMoney(saleTotal(sale))}
                       </span>
-                      <span className="text-xs font-semibold text-white md:hidden">
+                      <span className="font-semibold text-white md:hidden">
                         {formatMoneyCompact(saleTotal(sale))}
                       </span>
                     </td>
                     <td className="hidden px-4 py-3 text-right text-xs font-semibold text-emerald-400 md:table-cell md:text-sm">
                       {formatMoney(saleProfit(sale))}
                     </td>
-                    <td className="px-5 py-3">
+                    <td className="w-[60px] px-5 py-3 text-center">
                       {isMobile ? (
-                        <div className="flex justify-end" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex justify-center" onClick={(e) => e.stopPropagation()}>
                           <ActionsMenu items={actions} compact />
                         </div>
                       ) : (
                         <div
-                          className="flex flex-wrap justify-end gap-1.5"
+                          className="flex flex-wrap justify-center gap-1.5"
                           onClick={(e) => e.stopPropagation()}
                         >
                           {actions.map((a) => {
