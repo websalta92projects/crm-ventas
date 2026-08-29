@@ -36,136 +36,177 @@ export async function generateDocumentPDF(data: DocData): Promise<void> {
 
   const doc = new jsPDF()
   const color = hexToRgb(data.config.color) ?? ([139, 92, 246] as [number, number, number])
-  const gray = [148, 163, 184] as [number, number, number]
-  const dark = [30, 41, 59] as [number, number, number]
-  const companyInitial = (data.config.name.trim()[0] ?? 'E').toUpperCase()
+  const gray = [100, 116, 139] as [number, number, number]
+  const dark = [17, 24, 39] as [number, number, number]
+  const border = [229, 231, 235] as [number, number, number] // #E5E7EB
+  const altRow = [243, 244, 246] as [number, number, number] // #F3F4F6
+  const totalBg = [209, 250, 229] as [number, number, number] // #D1FAE5
+  const totalText = [6, 95, 70] as [number, number, number] // #065F46
 
-  const drawLogoInitial = () => {
-    doc.setFillColor(255, 255, 255)
-    doc.circle(25, 21, 13, 'F')
-    doc.setTextColor(...color)
-    doc.setFont('helvetica', 'bold')
-    doc.setFontSize(18)
-    doc.text(companyInitial, 25, 25, { align: 'center' })
-  }
+  const PAGE_W = 210
+  const PAGE_H = 297
+  const M = 20 // margen de 20mm en todos los lados
+  const right = PAGE_W - M
+  const center = PAGE_W / 2
 
-  // Dibuja el logo manteniendo su proporción original (sin deformar).
-  // Límites: maxWidth 60mm y maxHeight 40mm.
-  const MAX_LOGO_W = 60
-  const MAX_LOGO_H = 40
-  const HEADER_H = 42
-
-  const addLogo = () => {
+  // ----- Encabezado: logo (si existe) + nombre/datos de la empresa -----
+  let nameX = M
+  if (data.config.logo) {
     try {
       const props = doc.getImageProperties(data.config.logo)
-      if (!props || props.width <= 0 || props.height <= 0) {
-        drawLogoInitial()
-        return
+      if (props && props.width > 0 && props.height > 0) {
+        const MAX_W = 40
+        const MAX_H = 22
+        let w = MAX_W
+        let h = (w * props.height) / props.width
+        if (h > MAX_H) {
+          h = MAX_H
+          w = (h * props.width) / props.height
+        }
+        doc.addImage(data.config.logo, 'PNG', M, M, w, h)
+        nameX = M + w + 8
       }
-      const aspectRatio = props.width / props.height
-
-      // Si es más ancha que alta → ajustar por ancho; si es más alta → ajustar por alto
-      let w = MAX_LOGO_W
-      let h = w / aspectRatio
-      if (h > MAX_LOGO_H) {
-        h = MAX_LOGO_H
-        w = h * aspectRatio
-      }
-
-      // Centrar verticalmente en la banda del encabezado
-      const x = 12
-      const y = Math.max(1, (HEADER_H - h) / 2)
-
-      doc.addImage(data.config.logo, 'PNG', x, y, w, h)
     } catch {
-      // Si la imagen no se puede leer, se usa la inicial de la empresa
-      drawLogoInitial()
+      // Logo no legible: se muestra solo el nombre de la empresa
     }
   }
 
-  // ----- Encabezado (banda de color + logo) -----
-  doc.setFillColor(...color)
-  doc.rect(0, 0, 210, HEADER_H, 'F')
-
-  if (data.config.logo) {
-    addLogo()
-  } else {
-    drawLogoInitial()
+  // Nombre y subtítulo de la empresa (si no hay logo se muestra solo el nombre)
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(16)
+  doc.setTextColor(...dark)
+  doc.text(data.config.name, nameX, M + 7)
+  if (data.config.subtitle?.trim()) {
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(9)
+    doc.setTextColor(...gray)
+    doc.text(data.config.subtitle.trim(), nameX, M + 13)
   }
 
-  // Datos de la empresa
-  doc.setTextColor(255, 255, 255)
-  doc.setFont('helvetica', 'bold')
-  doc.setFontSize(14)
-  doc.text(data.config.name, 100, 12)
+  // Contacto (dirección, teléfono, email) alineado a la derecha
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(8)
-  doc.text(data.config.address, 100, 18)
-  doc.text(`Tel: ${data.config.phone}`, 100, 22)
-  doc.text(`Email: ${data.config.email}`, 100, 26)
+  doc.setTextColor(...gray)
+  let cy = M + 3
+  if (data.config.address?.trim()) {
+    doc.text(data.config.address.trim(), right, cy, { align: 'right' })
+    cy += 4.5
+  }
+  if (data.config.phone?.trim()) {
+    doc.text(`Tel: ${data.config.phone.trim()}`, right, cy, { align: 'right' })
+    cy += 4.5
+  }
+  if (data.config.email?.trim()) {
+    doc.text(`Email: ${data.config.email.trim()}`, right, cy, { align: 'right' })
+  }
+
+  // Línea de acento con el color principal bajo el encabezado
+  doc.setDrawColor(...color)
+  doc.setLineWidth(1)
+  doc.line(M, M + 24, right, M + 24)
 
   // ----- Título del documento -----
   doc.setTextColor(...color)
   doc.setFont('helvetica', 'bold')
-  doc.setFontSize(22)
-  doc.text(`${data.type} #${data.number}`, 14, 56)
+  doc.setFontSize(20)
+  doc.text(`${data.type} #${data.number}`, M, M + 36)
 
   // ----- Cliente y fecha -----
-  doc.setTextColor(...dark)
   doc.setFont('helvetica', 'normal')
-  doc.setFontSize(10)
-  doc.text(`Fecha: ${data.date}`, 14, 64)
-  doc.text(`Cliente: ${data.customerName}`, 14, 70)
-  doc.text(`Teléfono: ${data.customerPhone || '—'}`, 14, 76)
+  doc.setFontSize(9)
+  doc.setTextColor(...dark)
+  doc.text(`Fecha: ${data.date}`, M, M + 44)
+  doc.text(`Cliente: ${data.customerName}`, M, M + 49)
+  doc.text(`Teléfono: ${data.customerPhone || '—'}`, M, M + 54)
 
-  // ----- Detalle de productos -----
+  // ----- Tabla de productos (bordes suaves, encabezado con color, filas alternadas) -----
   autoTable(doc, {
-    startY: 84,
-    head: [['Cant.', 'Descripción', 'Precio', 'Subtotal']],
-    body: data.lines.map((l) => [
+    startY: M + 61,
+    margin: { left: M, right: M, top: M, bottom: 30 },
+    head: [['#', 'Cant.', 'Descripción', 'Precio unitario', 'Subtotal']],
+    body: data.lines.map((l, idx) => [
+      String(idx + 1),
       String(l.quantity),
       l.name,
       formatMoney(l.unitPrice),
       formatMoney(l.unitPrice * l.quantity),
     ]),
-    theme: 'striped',
-    headStyles: { fillColor: color },
-    styles: { fontSize: 9, cellPadding: 3 },
+    theme: 'grid',
+    styles: {
+      fontSize: 9,
+      textColor: dark,
+      lineColor: border,
+      lineWidth: 0.2,
+      cellPadding: 3,
+    },
+    headStyles: {
+      fillColor: color,
+      textColor: [255, 255, 255] as [number, number, number],
+      fontStyle: 'bold',
+      halign: 'center',
+    },
+    alternateRowStyles: {
+      fillColor: altRow,
+    },
     columnStyles: {
-      0: { halign: 'center', cellWidth: 16 },
-      2: { halign: 'right', cellWidth: 32 },
-      3: { halign: 'right', cellWidth: 34 },
+      0: { halign: 'center', cellWidth: 12 },
+      1: { halign: 'center', cellWidth: 18 },
+      3: { halign: 'right', cellWidth: 32 },
+      4: { halign: 'right', cellWidth: 34 },
     },
   })
 
   const finalY = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY
 
-  // ----- Totales -----
-  let y = finalY + 10
-  doc.setFontSize(10)
-  doc.setFont('helvetica', 'normal')
-  doc.setTextColor(...dark)
-  doc.text('Subtotal:', 130, y)
-  doc.text(formatMoney(data.subtotal), 196, y, { align: 'right' })
-  y += 6
-  doc.text(`IVA (${Math.round(TAX_RATE * 100)}%):`, 130, y)
-  doc.text(formatMoney(data.tax), 196, y, { align: 'right' })
-  y += 8
-  doc.setFont('helvetica', 'bold')
-  doc.setFontSize(13)
-  doc.setTextColor(...color)
-  doc.text('TOTAL:', 130, y)
-  doc.text(formatMoney(data.total), 196, y, { align: 'right' })
+  // ----- Totales (sección separada con Total destacado) -----
+  const boxX = 108
+  const boxW = right - boxX
+  const totalsTop = finalY + 6
+  const totalsBottom = totalsTop + 27
 
-  // ----- Pie de página -----
+  // Marco del bloque de totales
+  doc.setDrawColor(...border)
+  doc.setLineWidth(0.3)
+  doc.roundedRect(boxX, totalsTop, boxW, totalsBottom - totalsTop, 3, 3, 'S')
+
+  let ty = totalsTop + 7
+  doc.setFont('helvetica', 'normal')
+  doc.setFontSize(9)
+  doc.setTextColor(...dark)
+  doc.text('Subtotal:', boxX + 4, ty)
+  doc.text(formatMoney(data.subtotal), right - 4, ty, { align: 'right' })
+  ty += 6
+  doc.text(`IVA (${Math.round(TAX_RATE * 100)}%):`, boxX + 4, ty)
+  doc.text(formatMoney(data.tax), right - 4, ty, { align: 'right' })
+
+  // Fila del Total: fondo verde claro y texto verde oscuro
+  const totalTop = totalsTop + 16
+  const totalRowH = 10
+  doc.setFillColor(...totalBg)
+  doc.roundedRect(boxX, totalTop, boxW, totalRowH, 3, 3, 'F')
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(12)
+  doc.setTextColor(...totalText)
+  doc.text('TOTAL:', boxX + 4, totalTop + 7)
+  doc.text(formatMoney(data.total), right - 4, totalTop + 7, { align: 'right' })
+
+  // ----- Pie de página (mensaje, fecha de generación y número de página) -----
   const pages = doc.getNumberOfPages()
+  const today = formatDateOnly(new Date().toISOString())
   for (let i = 1; i <= pages; i++) {
     doc.setPage(i)
-    doc.setFontSize(8)
+    doc.setDrawColor(...border)
+    doc.setLineWidth(0.2)
+    doc.line(M, PAGE_H - 18, right, PAGE_H - 18)
+
     doc.setFont('helvetica', 'normal')
+    doc.setFontSize(8)
     doc.setTextColor(...gray)
-    doc.text(data.config.footer?.trim() || 'Generado con ElectroCRM', 14, 290)
-    doc.text(`Página ${i} de ${pages}`, 196, 290, { align: 'right' })
+    doc.text(data.config.footer?.trim() || '¡Gracias por su preferencia!', center, PAGE_H - 14, {
+      align: 'center',
+    })
+    doc.text(`Generado el ${today}`, center, PAGE_H - 9, { align: 'center' })
+    doc.text(`Página ${i} de ${pages}`, right, PAGE_H - 9, { align: 'right' })
   }
 
   doc.save(`${data.type.toLowerCase()}-${data.number}.pdf`)
