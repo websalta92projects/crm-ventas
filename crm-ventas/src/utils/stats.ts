@@ -19,7 +19,12 @@ function isSameMonth(a: Date, b: Date): boolean {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth()
 }
 
-// Resumen del Dashboard: SOLO considera ventas PAGADAS
+// Resumen del Dashboard: considera ventas PAGADAS y ENTREGADAS
+// (las ventas pendientes de pago NO se contabilizan)
+export function isCountedSale(sale: Sale): boolean {
+  return sale.status === 'pagado' || sale.status === 'entregado'
+}
+
 export function getSalesSummary(
   sales: Sale[],
   products: Product[],
@@ -33,7 +38,7 @@ export function getSalesSummary(
   const byProduct = new Map<string, { quantity: number; revenue: number }>()
 
   for (const sale of sales) {
-    if (sale.status !== 'pagado') continue
+    if (!isCountedSale(sale)) continue
     const date = new Date(sale.date)
 
     let saleTotal = 0
@@ -98,7 +103,7 @@ export function getDailySeries(sales: Sale[], days = 30, now = new Date()): Dail
 
   const map = new Map(points.map((p) => [p.key, p]))
   for (const sale of sales) {
-    if (sale.status !== 'pagado') continue
+    if (!isCountedSale(sale)) continue
     const key = startOfDay(new Date(sale.date)).getTime().toString()
     const point = map.get(key)
     if (!point) continue

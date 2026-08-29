@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { Fragment, useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import toast from 'react-hot-toast'
 import {
@@ -295,7 +295,7 @@ export default function Sales({ initialBudgetId, onBudgetConsumed }: SalesProps)
                 <th className="px-4 py-3 font-medium">Cant.</th>
                 <th className="px-4 py-3 text-right font-medium">Total</th>
                 <th className="px-4 py-3 text-right font-medium">Ganancia</th>
-                <th className="px-5 py-3 text-right font-medium">Acciones</th>
+                {!isMobile && <th className="px-5 py-3 text-right font-medium">Acciones</th>}
               </tr>
             </thead>
             <tbody>
@@ -364,51 +364,61 @@ export default function Sales({ initialBudgetId, onBudgetConsumed }: SalesProps)
                 })
 
                 return (
-                  <motion.tr
-                    key={sale.id}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 0.2 }}
-                    className="border-b border-white/5 text-slate-300 last:border-0 hover:bg-white/[0.03]"
-                  >
-                    <td className="px-5 py-3">
-                      <span className="flex items-center gap-2">
-                        <span className="text-lg">{first?.emoji ?? '📦'}</span>
-                        <span className="font-medium text-white">{first?.name ?? 'Producto'}</span>
-                        {sale.items.length > 1 && (
-                          <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-medium text-slate-300">
-                            +{sale.items.length - 1}
-                          </span>
-                        )}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">{customer?.name ?? 'Sin cliente'}</td>
-                    <td className="px-4 py-3 text-slate-400">{formatDateTime(sale.date)}</td>
-                    <td className="px-4 py-3">
-                      <StatusBadge status={sale.status} />
-                    </td>
-                    <td className="px-4 py-3">{units}</td>
-                    <td className="px-4 py-3 text-right font-semibold text-white">
-                      {formatMoney(saleTotal(sale))}
-                    </td>
-                    <td className="px-4 py-3 text-right font-semibold text-emerald-400">
-                      {formatMoney(saleProfit(sale))}
-                    </td>
-                    <td className="px-5 py-3">
-                      {isMobile ? (
-                        <div className="flex justify-end">
-                          <ActionsMenu items={actions} />
-                        </div>
-                      ) : (
-                        <div className="flex flex-wrap justify-end gap-1.5">
-                          {actions.map((a) => {
-                            const { key, ...rest } = a
-                            return <ActionButton key={key} {...rest} />
-                          })}
-                        </div>
+                  <Fragment key={sale.id}>
+                    <motion.tr
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ duration: 0.2 }}
+                      className="border-b border-white/5 text-slate-300 last:border-0 hover:bg-white/[0.03]"
+                    >
+                      <td className="px-5 py-3">
+                        <span className="flex items-center gap-2">
+                          <span className="text-lg">{first?.emoji ?? '📦'}</span>
+                          <span className="font-medium text-white">{first?.name ?? 'Producto'}</span>
+                          {sale.items.length > 1 && (
+                            <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-medium text-slate-300">
+                              +{sale.items.length - 1}
+                            </span>
+                          )}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">{customer?.name ?? 'Sin cliente'}</td>
+                      <td className="px-4 py-3 text-slate-400">{formatDateTime(sale.date)}</td>
+                      <td className="px-4 py-3">
+                        <StatusBadge status={sale.status} />
+                      </td>
+                      <td className="px-4 py-3">{units}</td>
+                      <td className="px-4 py-3 text-right font-semibold text-white">
+                        {formatMoney(saleTotal(sale))}
+                      </td>
+                      <td className="px-4 py-3 text-right font-semibold text-emerald-400">
+                        {formatMoney(saleProfit(sale))}
+                      </td>
+                      {!isMobile && (
+                        <td className="px-5 py-3">
+                          <div className="flex flex-wrap justify-end gap-1.5">
+                            {actions.map((a) => {
+                              const { key, ...rest } = a
+                              return <ActionButton key={key} {...rest} />
+                            })}
+                          </div>
+                        </td>
                       )}
-                    </td>
-                  </motion.tr>
+                    </motion.tr>
+                    {isMobile && (
+                      <motion.tr
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="border-b border-white/5 lg:hidden"
+                      >
+                        <td colSpan={8} className="px-5 py-2">
+                          <div className="flex justify-end">
+                            <ActionsMenu items={actions} />
+                          </div>
+                        </td>
+                      </motion.tr>
+                    )}
+                  </Fragment>
                 )
               })}
               {filtered.length === 0 && (

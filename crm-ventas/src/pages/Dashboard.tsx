@@ -44,7 +44,7 @@ export default function Dashboard() {
         <KpiCard
           title="Ventas de hoy"
           value={formatMoney(summary.todayTotal)}
-          subtitle={`${summary.todayCount} unidades pagadas hoy`}
+          subtitle={`${summary.todayCount} unidades vendidas hoy`}
           icon={ShoppingCart}
           gradient="from-sky-500 to-blue-600"
           delay={0.06}

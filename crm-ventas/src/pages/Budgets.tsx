@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { Fragment, useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import toast from 'react-hot-toast'
 import {
@@ -208,7 +208,7 @@ export default function Budgets({ onCreateSale }: BudgetsProps) {
                 <th className="px-4 py-3 text-right font-medium">Total</th>
                 <th className="px-4 py-3 font-medium">Estado</th>
                 <th className="px-4 py-3 font-medium">Fecha</th>
-                <th className="px-5 py-3 text-right font-medium">Acciones</th>
+                {!isMobile && <th className="px-5 py-3 text-right font-medium">Acciones</th>}
               </tr>
             </thead>
             <tbody>
@@ -307,48 +307,58 @@ export default function Budgets({ onCreateSale }: BudgetsProps) {
                 })
 
                 return (
-                <motion.tr
-                  key={b.id}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.2 }}
-                  className="border-b border-white/5 text-slate-300 last:border-0 hover:bg-white/[0.03]"
-                >
-                  <td className="px-5 py-3">
-                    <span className="font-semibold text-white">#{b.number}</span>
-                  </td>
-                  <td className="px-4 py-3">
-                    {customerById.get(b.customerId)?.name ?? 'Sin cliente'}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className="flex items-center gap-1.5">
-                      <span className="text-lg">{b.items[0]?.emoji ?? '📄'}</span>
-                      {b.items.length} ítem{b.items.length === 1 ? '' : 's'}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-right font-semibold text-white">
-                    {formatMoney(b.total)}
-                  </td>
-                  <td className="px-4 py-3">
-                    <StatusBadge status={b.status} />
-                  </td>
-                  <td className="px-4 py-3 text-slate-400">{formatDateOnly(b.updatedAt)}</td>
-                  <td className="px-5 py-3">
-                    {isMobile ? (
-                      <div className="flex justify-end">
-                        <ActionsMenu items={actions} />
-                      </div>
-                    ) : (
-                      <div className="flex flex-wrap justify-end gap-1.5">
-                        {actions.map((a) => {
-                          const { key, ...rest } = a
-                          return <ActionButton key={key} {...rest} />
-                        })}
-                      </div>
+                  <Fragment key={b.id}>
+                    <motion.tr
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ duration: 0.2 }}
+                      className="border-b border-white/5 text-slate-300 last:border-0 hover:bg-white/[0.03]"
+                    >
+                      <td className="px-5 py-3">
+                        <span className="font-semibold text-white">#{b.number}</span>
+                      </td>
+                      <td className="px-4 py-3">
+                        {customerById.get(b.customerId)?.name ?? 'Sin cliente'}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="flex items-center gap-1.5">
+                          <span className="text-lg">{b.items[0]?.emoji ?? '📄'}</span>
+                          {b.items.length} ítem{b.items.length === 1 ? '' : 's'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-right font-semibold text-white">
+                        {formatMoney(b.total)}
+                      </td>
+                      <td className="px-4 py-3">
+                        <StatusBadge status={b.status} />
+                      </td>
+                      <td className="px-4 py-3 text-slate-400">{formatDateOnly(b.updatedAt)}</td>
+                      {!isMobile && (
+                        <td className="px-5 py-3">
+                          <div className="flex flex-wrap justify-end gap-1.5">
+                            {actions.map((a) => {
+                              const { key, ...rest } = a
+                              return <ActionButton key={key} {...rest} />
+                            })}
+                          </div>
+                        </td>
+                      )}
+                    </motion.tr>
+                    {isMobile && (
+                      <motion.tr
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="border-b border-white/5 lg:hidden"
+                      >
+                        <td colSpan={7} className="px-5 py-2">
+                          <div className="flex justify-end">
+                            <ActionsMenu items={actions} />
+                          </div>
+                        </td>
+                      </motion.tr>
                     )}
-                  </td>
-                </motion.tr>
-              );
+                  </Fragment>
+                );
               })}
               {filtered.length === 0 && (
                 <tr>
