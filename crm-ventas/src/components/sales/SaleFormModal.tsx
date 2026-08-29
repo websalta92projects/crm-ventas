@@ -5,6 +5,7 @@ import { Minus, Plus, Search, ShoppingBag, Trash2, X } from 'lucide-react'
 import { useSalesStore } from '../../store/salesStore'
 import { formatMoney, todayInputValue, toDateInputValue } from '../../utils/format'
 import { SALE_STATUSES, STATUS_META } from '../../utils/saleStatus'
+import ProductFormModal from '../products/ProductFormModal'
 import type { Product, Sale, SaleStatus } from '../../types'
 
 interface CartLine {
@@ -37,6 +38,7 @@ export default function SaleFormModal({
   const [cart, setCart] = useState<CartLine[]>([])
   const [query, setQuery] = useState('')
   const [showResults, setShowResults] = useState(false)
+  const [productModalOpen, setProductModalOpen] = useState(false)
 
   const isEditing = Boolean(sale)
 
@@ -80,6 +82,7 @@ export default function SaleFormModal({
     }
     setQuery('')
     setShowResults(false)
+    setProductModalOpen(false)
   }, [open, sale, initialBudgetId, budgets])
 
   const productResults = useMemo(() => {
@@ -108,6 +111,28 @@ export default function SaleFormModal({
     })
     setQuery('')
     setShowResults(false)
+  }
+
+  // Abre el modal para crear un producto nuevo (precargado con el texto buscado)
+  const openCreateProduct = () => {
+    setShowResults(false)
+    setProductModalOpen(true)
+  }
+
+  // Producto creado desde el modal → se agrega al carrito automáticamente
+  const handleProductSaved = (created: Product) => {
+    setProductModalOpen(false)
+    setCart((prev) => {
+      const existing = prev.find((l) => l.productId === created.id)
+      if (existing) {
+        return prev.map((l) =>
+          l.productId === created.id ? { ...l, quantity: l.quantity + 1 } : l,
+        )
+      }
+      return [...prev, { productId: created.id, quantity: 1 }]
+    })
+    setQuery('')
+    toast.success(`Producto «${created.name}» agregado al carrito 🛒`)
   }
 
   const changeQty = (productId: string, delta: number) => {
@@ -194,7 +219,8 @@ export default function SaleFormModal({
   }
 
   return (
-    <AnimatePresence>
+    <>
+      <AnimatePresence>
       {open && (
         <>
           <motion.div
@@ -304,6 +330,21 @@ export default function SaleFormModal({
                         </span>
                       </button>
                     ))}
+                  </div>
+                )}
+                {query.trim() !== '' && productResults.length === 0 && (
+                  <div className="mt-2 space-y-2">
+                    <p className="text-xs text-slate-500">
+                      Sin resultados para «{query.trim()}».
+                    </p>
+                    <button
+                      type="button"
+                      onClick={openCreateProduct}
+                      className="flex min-h-[44px] w-full items-center justify-center gap-1.5 rounded-xl border border-violet-400/30 bg-violet-500/15 px-3 text-xs font-semibold text-violet-200 transition-all hover:bg-violet-500/25 active:scale-95"
+                    >
+                      <Plus className="h-4 w-4" />
+                      Crear producto «{query.trim()}»
+                    </button>
                   </div>
                 )}
               </div>
@@ -454,5 +495,15 @@ export default function SaleFormModal({
         </>
       )}
     </AnimatePresence>
+
+      {/* Modal de producto: al guardar se agrega al carrito */}
+      <ProductFormModal
+        open={productModalOpen}
+        product={null}
+        initialName={query.trim()}
+        onClose={() => setProductModalOpen(false)}
+        onSaved={handleProductSaved}
+      />
+    </>
   )
 }

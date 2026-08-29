@@ -157,7 +157,7 @@ export default function Sales({ initialBudgetId, onBudgetConsumed }: SalesProps)
         key: 'charge',
         icon: <Banknote className="h-4 w-4 text-emerald-300" />,
         label: 'Cobrar',
-        onClick: () => changeStatus(sale, 'pagado', 'Cobro registrado 💰'),
+        onClick: () => changeStatus(sale, 'pagado', '💰 Cobro registrado. La venta está pagada.'),
       })
     }
     if (sale.status === 'pagado' || sale.status === 'entregado') {
@@ -185,7 +185,7 @@ export default function Sales({ initialBudgetId, onBudgetConsumed }: SalesProps)
         key: 'deliver',
         icon: <PackageCheck className="h-4 w-4 text-sky-300" />,
         label: 'Entregar',
-        onClick: () => changeStatus(sale, 'entregado', 'Venta marcada como Entregada 📦'),
+        onClick: () => handleDeliver(sale),
       })
     }
     a.push({
@@ -213,8 +213,8 @@ export default function Sales({ initialBudgetId, onBudgetConsumed }: SalesProps)
     return a
   }
 
-  // Recibo PDF: usa el folio de la configuración y lo incrementa automáticamente
-  const handleReceiptPdf = async (sale: Sale) => {
+  // Genera el recibo PDF asignando el folio si hace falta
+  const generateReceiptFor = async (sale: Sale, silent = false) => {
     const config = useConfigStore.getState().config
     let number = sale.receiptNumber
     if (!number) {
@@ -223,10 +223,22 @@ export default function Sales({ initialBudgetId, onBudgetConsumed }: SalesProps)
     }
     try {
       await generateReceiptPDF(sale, customerById.get(sale.customerId), config, number)
-      toast.success('Recibo PDF generado 🧾')
+      if (!silent) toast.success('Recibo PDF generado 🧾')
+      return true
     } catch {
-      toast.error('No se pudo generar el recibo')
+      if (!silent) toast.error('No se pudo generar el recibo')
+      return false
     }
+  }
+
+  // Recibo PDF manual (botón de la fila / detalle)
+  const handleReceiptPdf = (sale: Sale) => generateReceiptFor(sale)
+
+  // Marca como entregado y genera el recibo PDF automáticamente
+  const handleDeliver = async (sale: Sale) => {
+    setSaleStatus(sale.id, 'entregado')
+    toast.success('📦 Venta entregada. El recibo PDF se ha generado automáticamente.')
+    await generateReceiptFor(sale, true)
   }
 
   // Texto unificado del recibo: '📋 Copiar' y '📤 WhatsApp' generan el MISMO mensaje
@@ -379,7 +391,7 @@ export default function Sales({ initialBudgetId, onBudgetConsumed }: SalesProps)
                     key: 'charge',
                     icon: <Banknote className="h-4 w-4 text-emerald-300" />,
                     label: 'Cobrar',
-                    onClick: () => changeStatus(sale, 'pagado', 'Cobro registrado 💰'),
+                    onClick: () => changeStatus(sale, 'pagado', '💰 Cobro registrado. La venta está pagada.'),
                   })
                 }
                 if (sale.status === 'pagado' || sale.status === 'entregado') {
@@ -407,7 +419,7 @@ export default function Sales({ initialBudgetId, onBudgetConsumed }: SalesProps)
                     key: 'deliver',
                     icon: <PackageCheck className="h-4 w-4 text-sky-300" />,
                     label: 'Entregar',
-                    onClick: () => changeStatus(sale, 'entregado', 'Venta marcada como Entregada 📦'),
+                    onClick: () => handleDeliver(sale),
                   })
                 }
                 actions.push({

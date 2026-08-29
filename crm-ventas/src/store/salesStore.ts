@@ -61,6 +61,8 @@ interface SalesStore {
   }) => void
   resetData: () => void
   resetAllData: () => void
+  clearAllData: () => void
+
 }
 const nowIso = () => new Date().toISOString()
 
@@ -330,6 +332,9 @@ export const useSalesStore = create<SalesStore>()(
           customers: initialCustomers,
           budgets: initialBudgets,
         }),
+
+      // Deja el CRM con datos vacíos (para el botón "Resetear todos los datos")
+      clearAllData: () => set({ products: [], sales: [], customers: [], budgets: [] }),
     }),
     {
       name: 'electro-crm-v1',

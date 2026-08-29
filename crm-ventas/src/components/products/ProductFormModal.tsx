@@ -13,9 +13,19 @@ interface ProductFormModalProps {
   open: boolean
   product: Product | null
   onClose: () => void
+  // Precarga el nombre del producto (ej. al crearlo desde el buscador de presupuesto/venta)
+  initialName?: string
+  // Se llama tras guardar con el producto creado/actualizado (para agregarlo al carrito)
+  onSaved?: (product: Product) => void
 }
 
-export default function ProductFormModal({ open, product, onClose }: ProductFormModalProps) {
+export default function ProductFormModal({
+  open,
+  product,
+  onClose,
+  initialName,
+  onSaved,
+}: ProductFormModalProps) {
   const products = useSalesStore((s) => s.products)
   const saveProduct = useSalesStore((s) => s.saveProduct)
 
@@ -42,7 +52,7 @@ export default function ProductFormModal({ open, product, onClose }: ProductForm
   // Carga los datos al abrir (nuevo o edición)
   useEffect(() => {
     if (!open) return
-    setName(product?.name ?? '')
+    setName(product?.name ?? initialName ?? '')
     setDescription(product?.description ?? '')
     setCategory(product?.category ?? '')
     setPrice(product ? String(product.price) : '')
@@ -54,7 +64,7 @@ export default function ProductFormModal({ open, product, onClose }: ProductForm
     setCatOpen(false)
     setCreatingCategory(false)
     setNewCategory('')
-  }, [open, product])
+  }, [open, product, initialName])
 
   const priceNum = parseFloat(price)
   const costNum = parseFloat(cost)
@@ -100,6 +110,21 @@ export default function ProductFormModal({ open, product, onClose }: ProductForm
       stock: stockNum,
       emoji: emoji || '📦',
     })
+    // Devuelve el producto guardado para que el flujo de presupuesto/venta lo agregue al carrito
+    const saved = product
+      ? {
+          ...product,
+          name: name.trim(),
+          description: description.trim(),
+          category: category.trim(),
+          price: priceNum,
+          cost: costNum,
+          stock: stockNum,
+          emoji: emoji || '📦',
+        }
+      : useSalesStore.getState().products.find((p) => p.name === name.trim())
+    if (saved) onSaved?.(saved)
+
     toast.success(product ? 'Producto actualizado ✅' : 'Producto creado 🎉')
     onClose()
   }

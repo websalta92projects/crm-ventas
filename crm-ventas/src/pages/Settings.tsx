@@ -1,8 +1,10 @@
-import { useRef, type ChangeEvent, type ReactNode } from 'react'
+import { useRef, useState, type ChangeEvent, type ReactNode } from 'react'
 import { motion } from 'framer-motion'
 import toast from 'react-hot-toast'
-import { Building2, FileText, ImageUp, RotateCcw, Save } from 'lucide-react'
+import { AlertTriangle, Building2, FileText, ImageUp, RotateCcw, Save } from 'lucide-react'
 import { useConfigStore } from '../store/configStore'
+import { useSalesStore } from '../store/salesStore'
+import ConfirmModal from '../components/products/ConfirmModal'
 
 const inputClass =
   'w-full rounded-xl border border-white/10 bg-white/[0.05] px-3 py-2.5 text-sm text-white placeholder:text-slate-500 outline-none transition-colors focus:border-violet-400/60'
@@ -12,6 +14,18 @@ export default function Settings() {
   const updateConfig = useConfigStore((s) => s.updateConfig)
   const resetConfig = useConfigStore((s) => s.resetConfig)
   const fileRef = useRef<HTMLInputElement>(null)
+  const clearAllData = useSalesStore((s) => s.clearAllData)
+  const [resetOpen, setResetOpen] = useState(false)
+
+  // Reseteo total: deja el CRM vacío, borra configuración y categorías, y recarga la página
+  const handleResetAll = () => {
+    // clearAllData persiste un estado vacío en 'electro-crm-v1' (así no reaparecen los datos demo)
+    clearAllData()
+    localStorage.removeItem('company-config')
+    localStorage.removeItem('categories')
+    toast.success('✅ Todos los datos han sido eliminados. La página se recargará.')
+    setTimeout(() => window.location.reload(), 1200)
+  }
 
   const onLogo = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -257,6 +271,44 @@ export default function Settings() {
           </div>
         </div>
       </section>
+
+      {/* Zona de peligro */}
+      <section className="rounded-xl border border-rose-500/30 bg-rose-500/[0.05] p-5 md:p-6">
+        <header className="mb-4 flex items-center gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-500/15 text-rose-400">
+            <AlertTriangle className="h-4 w-4" />
+          </div>
+          <div>
+            <h3 className="text-sm font-semibold text-rose-300">Zona de peligro</h3>
+            <p className="text-[11px] text-slate-400">Estas acciones no se pueden deshacer</p>
+          </div>
+        </header>
+
+        <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
+          <div>
+            <p className="text-sm font-medium text-slate-200">Resetear todos los datos</p>
+            <p className="text-xs text-slate-400">
+              Elimina productos, clientes, presupuestos, ventas y configuración.
+            </p>
+          </div>
+          <button
+            onClick={() => setResetOpen(true)}
+            className="flex items-center gap-2 rounded-xl border border-rose-400/30 bg-rose-500/15 px-4 py-2.5 text-sm font-semibold text-rose-300 transition-all hover:bg-rose-500/25 active:scale-95"
+          >
+            <RotateCcw className="h-4 w-4" />
+            Resetear todos los datos
+          </button>
+        </div>
+      </section>
+
+      <ConfirmModal
+        open={resetOpen}
+        title="Resetear todos los datos"
+        message="⚠️ ¿Estás seguro? Esto eliminará TODOS los productos, clientes, presupuestos, ventas y configuraciones. Esta acción no se puede deshacer."
+        confirmLabel="Sí, eliminar todo"
+        onConfirm={handleResetAll}
+        onClose={() => setResetOpen(false)}
+      />
     </motion.div>
   )
 }

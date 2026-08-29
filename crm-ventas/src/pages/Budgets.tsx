@@ -38,6 +38,7 @@ export default function Budgets({ onCreateSale }: BudgetsProps) {
   const customers = useSalesStore((s) => s.customers)
   const removeBudget = useSalesStore((s) => s.removeBudget)
   const setBudgetStatus = useSalesStore((s) => s.setBudgetStatus)
+  const saveSale = useSalesStore((s) => s.saveSale)
 
   const [statusFilter, setStatusFilter] = useState<'all' | BudgetStatus>('all')
   const [formOpen, setFormOpen] = useState(false)
@@ -186,7 +187,7 @@ export default function Budgets({ onCreateSale }: BudgetsProps) {
         key: 'accept',
         icon: <CheckCheck className="h-4 w-4 text-emerald-300" />,
         label: 'Aceptar',
-        onClick: () => changeStatus(b, 'aceptado', 'Presupuesto aceptado 🎉'),
+        onClick: () => acceptBudget(b),
       })
       a.push({
         key: 'reject',
@@ -218,6 +219,22 @@ export default function Budgets({ onCreateSale }: BudgetsProps) {
       onClick: () => setDeleting(b),
     })
     return a
+  }
+
+  // Acepta el presupuesto y crea la venta automáticamente (estado Pendiente de pago)
+  const acceptBudget = (b: Budget) => {
+    if (!b.customerId) {
+      toast.error('El presupuesto no tiene cliente asignado')
+      return
+    }
+    saveSale({
+      items: b.items.map((i) => ({ productId: i.productId, quantity: i.quantity })),
+      customerId: b.customerId,
+      status: 'pendiente_pago',
+      date: new Date().toISOString(),
+      budgetId: b.id,
+    })
+    toast.success('✅ Presupuesto aceptado. La venta ha sido creada automáticamente.')
   }
 
   return (
@@ -318,7 +335,7 @@ export default function Budgets({ onCreateSale }: BudgetsProps) {
                     key: 'accept',
                     icon: <CheckCheck className="h-4 w-4 text-emerald-300" />,
                     label: 'Aceptar',
-                    onClick: () => changeStatus(b, 'aceptado', 'Presupuesto aceptado 🎉'),
+                    onClick: () => acceptBudget(b),
                   })
                   actions.push({
                     key: 'reject',

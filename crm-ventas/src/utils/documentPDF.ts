@@ -30,7 +30,8 @@ export interface DocData {
   config: CompanyConfig
 }
 
-export async function generateDocumentPDF(data: DocData): Promise<void> {
+// Construye el documento PDF (jsPDF) listo para guardar o compartir
+export async function buildDocumentDoc(data: DocData): Promise<import('jspdf').jsPDF> {
   const { jsPDF } = await import('jspdf')
   const autoTable = (await import('jspdf-autotable')).default
 
@@ -209,7 +210,19 @@ export async function generateDocumentPDF(data: DocData): Promise<void> {
     doc.text(`Página ${i} de ${pages}`, right, PAGE_H - 9, { align: 'right' })
   }
 
+  return doc
+}
+
+// Genera y descarga el PDF
+export async function generateDocumentPDF(data: DocData): Promise<void> {
+  const doc = await buildDocumentDoc(data)
   doc.save(`${data.type.toLowerCase()}-${data.number}.pdf`)
+}
+
+// Genera el PDF como Blob (para compartirlo por WhatsApp/Web Share API)
+export async function getDocumentPDFBlob(data: DocData): Promise<Blob> {
+  const doc = await buildDocumentDoc(data)
+  return doc.output('blob')
 }
 
 export async function generateBudgetPDF(

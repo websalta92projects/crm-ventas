@@ -16,8 +16,10 @@ import { useSalesStore } from '../../store/salesStore'
 import { useConfigStore } from '../../store/configStore'
 import { formatMoney, formatDateOnly } from '../../utils/format'
 import { budgetTotals, buildBudgetText, buildWhatsAppLink, TAX_RATE } from '../../utils/budget'
-import { generateDocumentPDF } from '../../utils/documentPDF'
+import { generateDocumentPDF, getDocumentPDFBlob } from '../../utils/documentPDF'
+import { trySharePdf } from '../../utils/pdfShare'
 import CustomerFormModal from '../customers/CustomerFormModal'
+import ProductFormModal from '../products/ProductFormModal'
 import type { Customer, Product } from '../../types'
 
 interface CartLine {
@@ -43,6 +45,7 @@ export default function BudgetFormModal({ open, budget, onClose }: BudgetFormMod
   const [customerQuery, setCustomerQuery] = useState('')
   const [showCustomers, setShowCustomers] = useState(false)
   const [customerModalOpen, setCustomerModalOpen] = useState(false)
+  const [productModalOpen, setProductModalOpen] = useState(false)
 
   // Carga los datos al abrir
   useEffect(() => {
@@ -59,6 +62,7 @@ export default function BudgetFormModal({ open, budget, onClose }: BudgetFormMod
     setCustomerQuery('')
     setShowCustomers(false)
     setCustomerModalOpen(false)
+    setProductModalOpen(false)
   }, [open, budget])
 
   const customerById = useMemo(() => new Map(customers.map((c) => [c.id, c])), [customers])
@@ -88,6 +92,28 @@ export default function BudgetFormModal({ open, budget, onClose }: BudgetFormMod
     })
     setProductQuery('')
     setShowProducts(false)
+  }
+
+  // Abre el modal para crear un producto nuevo (precargado con el texto buscado)
+  const openCreateProduct = () => {
+    setShowProducts(false)
+    setProductModalOpen(true)
+  }
+
+  // Producto creado desde el modal → se agrega al carrito automáticamente
+  const handleProductSaved = (created: Product) => {
+    setProductModalOpen(false)
+    setCart((prev) => {
+      const existing = prev.find((l) => l.productId === created.id)
+      if (existing) {
+        return prev.map((l) =>
+          l.productId === created.id ? { ...l, quantity: l.quantity + 1 } : l,
+        )
+      }
+      return [...prev, { productId: created.id, quantity: 1 }]
+    })
+    setProductQuery('')
+    toast.success(`Producto «${created.name}» agregado al carrito 🛒`)
   }
 
   const changeQty = (productId: string, delta: number) => {
@@ -135,7 +161,8 @@ export default function BudgetFormModal({ open, budget, onClose }: BudgetFormMod
     setShowCustomers(false)
   }
 
-  const persist = (status: 'borrador' | 'enviado') => {
+  // Guarda como Enviado, genera el PDF y lo comparte por WhatsApp (con adjunto si es posible)
+  const sendBudget = async () => {
     if (lines.length === 0) {
       toast.error('Agrega al menos un producto')
       return
@@ -144,24 +171,58 @@ export default function BudgetFormModal({ open, budget, onClose }: BudgetFormMod
       toast.error('Selecciona o crea un cliente')
       return
     }
+    const config = useConfigStore.getState().config
+    const number = budget?.number ?? config.budgetCounter
+    const items = currentItems()
+    const { subtotal, tax, total } = budgetTotals(items)
+    const text = buildCurrentText(number)
+
+    // 1. Marca el presupuesto como Enviado
     saveBudget({
       id: budget?.id,
       customerId,
       items: lines.map((l) => ({ productId: l.product.id, quantity: l.qty })),
-      status,
+      status: 'enviado',
     })
-    toast.success(
-      status === 'borrador' ? 'Presupuesto guardado como borrador 💾' : 'Presupuesto enviado 📤',
-    )
+    toast.success('Presupuesto enviado 📤')
     onClose()
+
+    // 2. Genera el PDF y lo comparte por WhatsApp (con adjunto en móvil)
+    try {
+      const blob = await getDocumentPDFBlob({
+        type: 'PRESUPUESTO',
+        number,
+        customerName: selectedCustomerName,
+        customerPhone: customer?.phone ?? '',
+        date: formatDateOnly(new Date().toISOString()),
+        lines: items.map((i) => ({
+          name: `${i.emoji || ''} ${i.name}`.trim(),
+          quantity: i.quantity,
+          unitPrice: i.unitPrice,
+        })),
+        subtotal,
+        tax,
+        total,
+        config,
+      })
+      const shared = await trySharePdf(text, blob, `presupuesto-${number}.pdf`)
+      if (!shared) {
+        const phone = customer?.phone || config.phone
+        window.open(buildWhatsAppLink(phone, text), '_blank')
+      }
+    } catch {
+      // Si no se pudo generar/compartir el PDF, abre WhatsApp con el mensaje de texto
+      const phone = customer?.phone || config.phone
+      window.open(buildWhatsAppLink(phone, text), '_blank')
+    }
   }
 
   // Texto unificado: '📋 Copiar' y '📤 WhatsApp' generan EXACTAMENTE el mismo mensaje
-  const buildCurrentText = (): string => {
+  const buildCurrentText = (number?: number): string => {
     const items = currentItems()
     const { subtotal, tax, total } = budgetTotals(items)
     return buildBudgetText({
-      numberLabel: budget ? String(budget.number) : 'NUEVO',
+      numberLabel: number ? String(number) : budget ? String(budget.number) : 'NUEVO',
       customerName: selectedCustomerName,
       date: formatDateOnly(budget?.createdAt ?? new Date().toISOString()),
       items,
@@ -415,9 +476,19 @@ export default function BudgetFormModal({ open, budget, onClose }: BudgetFormMod
                   </div>
                 )}
                 {productQuery.trim() !== '' && productResults.length === 0 && (
-                  <p className="mt-1 text-xs text-slate-500">
-                    Sin resultados para «{productQuery.trim()}».
-                  </p>
+                  <div className="mt-2 space-y-2">
+                    <p className="text-xs text-slate-500">
+                      Sin resultados para «{productQuery.trim()}».
+                    </p>
+                    <button
+                      type="button"
+                      onClick={openCreateProduct}
+                      className="flex min-h-[44px] w-full items-center justify-center gap-1.5 rounded-xl border border-violet-400/30 bg-violet-500/15 px-3 text-xs font-semibold text-violet-200 transition-all hover:bg-violet-500/25 active:scale-95"
+                    >
+                      <Plus className="h-4 w-4" />
+                      Crear producto «{productQuery.trim()}»
+                    </button>
+                  </div>
                 )}
               </div>
 
@@ -562,20 +633,17 @@ export default function BudgetFormModal({ open, budget, onClose }: BudgetFormMod
                     Copiar
                   </button>
                 </div>
-                <div className="grid grid-cols-2 gap-2">
+                <div>
                   <button
-                    onClick={() => persist('borrador')}
-                    className="flex min-h-[52px] items-center justify-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-3 text-sm font-semibold text-amber-200 transition-all hover:bg-amber-500/20 active:scale-95"
-                  >
-                    💾 Guardar borrador
-                  </button>
-                  <button
-                    onClick={() => persist('enviado')}
-                    className="flex min-h-[52px] items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-500 to-sky-500 px-3 py-3 text-sm font-semibold text-white shadow-lg shadow-violet-500/25 transition-all hover:brightness-110 active:scale-95"
+                    onClick={sendBudget}
+                    className="flex min-h-[52px] w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-500 to-sky-500 px-3 py-3 text-sm font-semibold text-white shadow-lg shadow-violet-500/25 transition-all hover:brightness-110 active:scale-95"
                   >
                     <Send className="h-4 w-4" />
-                    Enviar presupuesto
+                    📤 Enviar presupuesto
                   </button>
+                  <p className="mt-1.5 text-center text-[11px] text-slate-500">
+                    Genera el PDF, abre WhatsApp y marca el presupuesto como enviado.
+                  </p>
                 </div>
               </div>
               </div>
@@ -592,6 +660,15 @@ export default function BudgetFormModal({ open, budget, onClose }: BudgetFormMod
       customer={null}
       onClose={() => setCustomerModalOpen(false)}
       onSaved={handleCustomerSaved}
+    />
+
+    {/* Modal de producto: al guardar se agrega al carrito */}
+    <ProductFormModal
+      open={productModalOpen}
+      product={null}
+      initialName={productQuery.trim()}
+      onClose={() => setProductModalOpen(false)}
+      onSaved={handleProductSaved}
     />
     </>
   )
