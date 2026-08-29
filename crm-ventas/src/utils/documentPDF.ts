@@ -11,6 +11,47 @@ function hexToRgb(hex: string): [number, number, number] | null {
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255]
 }
 
+// ===== Limpieza de texto para el PDF =====
+// Las fuentes estándar de jsPDF (helvetica/courier) usan WinAnsi/Latin-1, por lo
+// que emojis y caracteres no ASCII se dibujan como glifos extraños. Esta función
+// normaliza (NFKD), quita diacríticos y conserva solo letras, números, espacios y puntos.
+export function sanitizePdfText(text: string): string {
+  if (!text) return ''
+  return despaceLetters(
+    text
+      .normalize('NFKD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^A-Za-z0-9 .]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim(),
+  )
+}
+
+// Une letras individuales separadas por espacios del mismo caso y en secuencias
+// largas ("k i n g c r e s t" → "kingcrest") para recuperar nombres corruptos con
+// espaciado entre letras. Evita fusionar letras sueltas de prefijos residuales.
+function despaceLetters(text: string): string {
+  const words = text.split(' ')
+  const out: string[] = []
+  let run: string[] = []
+  const flush = () => {
+    const allSameCase =
+      run.every((c) => c === c.toLowerCase()) || run.every((c) => c === c.toUpperCase())
+    if (run.length >= 4 && allSameCase) out.push(run.join(''))
+    else out.push(...run)
+    run = []
+  }
+  for (const w of words) {
+    if (/^[A-Za-z]$/.test(w)) run.push(w)
+    else {
+      flush()
+      out.push(w)
+    }
+  }
+  flush()
+  return out.join(' ')
+}
+
 export interface DocLine {
   name: string
   quantity: number
@@ -117,7 +158,7 @@ export async function buildDocumentDoc(data: DocData): Promise<import('jspdf').j
   doc.setFontSize(9)
   doc.setTextColor(...dark)
   doc.text(`Fecha: ${data.date}`, M, M + 44)
-  doc.text(`Cliente: ${data.customerName}`, M, M + 49)
+  doc.text(`Cliente: ${sanitizePdfText(data.customerName) || 'Cliente'}`, M, M + 49)
   doc.text(`Teléfono: ${data.customerPhone || '—'}`, M, M + 54)
 
   // ----- Tabla de productos (bordes suaves, encabezado con color, filas alternadas) -----
@@ -128,7 +169,7 @@ export async function buildDocumentDoc(data: DocData): Promise<import('jspdf').j
     body: data.lines.map((l, idx) => [
       String(idx + 1),
       String(l.quantity),
-      l.name,
+      sanitizePdfText(l.name) || 'Producto',
       formatMoney(l.unitPrice),
       formatMoney(l.unitPrice * l.quantity),
     ]),
