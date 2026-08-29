@@ -283,8 +283,8 @@ crm-ventas/
 
 | ¿Qué quieres cambiar?             | Archivo                              |
 | --------------------------------- | ------------------------------------ |
-| Moneda (USD → MXN, EUR…)          | `src/utils/format.ts` → `CURRENCY`   |
-| Idioma del formato (es-MX → es-ES)| `src/utils/format.ts` → `LOCALE`     |
+| Moneda (ARS → MXN, EUR…)          | `src/utils/format.ts` → `CURRENCY`   |
+| Idioma del formato (es-AR → es-ES)| `src/utils/format.ts` → `LOCALE`     |
 | Frases motivacionales             | `src/data/motivationalMessages.ts`   |
 | Productos / precios demo          | Edítalos desde la app (vista Productos) o en `src/data/seedData.ts` |
 | Colores de acento (violeta/azul)  | `tailwind.config.js` + clases en componentes |

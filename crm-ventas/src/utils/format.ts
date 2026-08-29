@@ -1,6 +1,6 @@
 // Formato de moneda y fechas (cambia aquí si vendes en otra moneda/país)
-export const CURRENCY = 'USD'
-export const LOCALE = 'es-MX'
+export const CURRENCY = 'ARS'
+export const LOCALE = 'es-AR'
 
 const moneyFormatter = new Intl.NumberFormat(LOCALE, {
   style: 'currency',
@@ -19,7 +19,7 @@ export function formatMoney(value: number): string {
   return moneyFormatter.format(value)
 }
 
-// Formato compacto para tablas móviles: "$3,686" (sin "USD" ni decimales)
+// Formato compacto para tablas móviles: "$1.499" (sin decimales)
 export function formatMoneyCompact(value: number): string {
   return `$${Math.round(value).toLocaleString(LOCALE)}`
 }

@@ -1,4 +1,4 @@
-import { CURRENCY, LOCALE } from './format'
+import { LOCALE } from './format'
 import type { BudgetItem } from '../types'
 
 // Impuesto estándar de los presupuestos (IVA 21%)
@@ -13,9 +13,9 @@ export function budgetTotals(items: { unitPrice: number; quantity: number }[]) {
 // Pie de página por defecto cuando no hay uno configurado en Configuración
 export const DEFAULT_FOOTER = 'Generado con ElectroCRM'
 
-// Formato de dinero en texto plano: "USD 1,499.00"
+// Formato de dinero en texto plano: "$ 1.499,00" (símbolo argentino)
 function plainMoney(value: number): string {
-  return `${CURRENCY} ${value.toLocaleString(LOCALE, {
+  return `$ ${value.toLocaleString(LOCALE, {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })}`
