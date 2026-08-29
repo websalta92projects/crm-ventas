@@ -108,19 +108,32 @@ export default function BudgetFormModal({ open, budget, onClose }: BudgetFormMod
     setProductModalOpen(true)
   }
 
-  // Código escaneado (cámara o lector USB): busca el producto por código de barras
-  const handleBarcodeScanned = (code: string) => {
-    setScannerOpen(false)
+  // Busca el producto por código de barras y lo agrega al carrito (cantidad 1 o +1).
+  // Devuelve true si lo agregó.
+  const addByBarcode = (code: string): boolean => {
     setShowProducts(false)
     setProductQuery('')
     const product = products.find((p) => p.barcode && p.barcode.trim() === code.trim())
-    if (product) {
-      addProduct(product)
-      toast.success(`«${product.name}» agregado al carrito 📦`)
-    } else if (window.confirm('Producto no encontrado. ¿Quieres crearlo?')) {
+    if (!product) return false
+    addProduct(product)
+    toast.success(`«${product.name}» agregado al carrito 📦`)
+    return true
+  }
+
+  // Cámara 📱: si no existe el producto, ofrece crearlo con el código precargado
+  const handleCameraBarcodeScanned = (code: string) => {
+    setScannerOpen(false)
+    if (addByBarcode(code)) return
+    if (window.confirm('Producto no encontrado. ¿Quieres crearlo?')) {
       setPreloadBarcode(code.trim())
       setProductModalOpen(true)
     }
+  }
+
+  // Lector USB 💻: si no existe, solo avisa (sin abrir la cámara ni el formulario)
+  const handleUsbBarcodeScanned = (code: string) => {
+    if (addByBarcode(code)) return
+    toast.error('Producto no encontrado. Escanea con la cámara o crea el producto manualmente.')
   }
 
   // Producto creado desde el modal → se agrega al carrito automáticamente
@@ -331,7 +344,7 @@ export default function BudgetFormModal({ open, budget, onClose }: BudgetFormMod
           {/* Campo oculto que captura el input del lector USB de código de barras */}
           <UsbBarcodeCapture
             active={open && !productModalOpen && !scannerOpen && !customerModalOpen}
-            onScan={handleBarcodeScanned}
+            onScan={handleUsbBarcodeScanned}
           />
           <motion.div
             className="fixed inset-0 z-[60] bg-slate-950/70 backdrop-blur-sm"
@@ -715,7 +728,7 @@ export default function BudgetFormModal({ open, budget, onClose }: BudgetFormMod
     <BarcodeScannerModal
       open={scannerOpen}
       onClose={() => setScannerOpen(false)}
-      onScan={handleBarcodeScanned}
+      onScan={handleCameraBarcodeScanned}
     />
     </>
   )
