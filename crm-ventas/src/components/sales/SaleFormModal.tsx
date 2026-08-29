@@ -42,6 +42,8 @@ export default function SaleFormModal({
   const [showResults, setShowResults] = useState(false)
   const [productModalOpen, setProductModalOpen] = useState(false)
   const [scannerOpen, setScannerOpen] = useState(false)
+  // true → el escáner abre directo en modo de ingreso manual (⌨️)
+  const [scannerManual, setScannerManual] = useState(false)
   // Código de barras escaneado sin producto registrado (precarga el modal de producto)
   const [preloadBarcode, setPreloadBarcode] = useState('')
 
@@ -141,8 +143,10 @@ export default function SaleFormModal({
 
   // Cámara 📱: si no existe el producto, ofrece crearlo con el código precargado
   const handleCameraBarcodeScanned = (code: string) => {
+    console.log('📷 Código recibido en venta:', code)
     setScannerOpen(false)
     if (addByBarcode(code)) return
+    console.log('📷 Producto no encontrado para el código:', code)
     if (window.confirm('Producto no encontrado. ¿Quieres crearlo?')) {
       setPreloadBarcode(code.trim())
       setProductModalOpen(true)
@@ -364,12 +368,29 @@ export default function SaleFormModal({
                   </div>
                   <button
                     type="button"
-                    onClick={() => setScannerOpen(true)}
-                    title="Escanear código de barras"
+                    onClick={() => {
+                      console.log('📷 Iniciando cámara... (desde venta)')
+                      setScannerManual(false)
+                      setScannerOpen(true)
+                    }}
+                    title="Escanear código de barras con la cámara"
                     aria-label="Escanear código de barras"
                     className="flex shrink-0 items-center gap-1.5 rounded-xl border border-app bg-card px-2.5 text-xs font-semibold text-primary transition-all hover:bg-card hover:text-primary active:scale-95"
                   >
                     📷 Escanear
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      console.log('⌨️ Abriendo ingreso manual de código')
+                      setScannerManual(true)
+                      setScannerOpen(true)
+                    }}
+                    title="Ingresar código de barras manualmente"
+                    aria-label="Ingresar código de barras manualmente"
+                    className="flex shrink-0 items-center gap-1.5 rounded-xl border border-app bg-card px-2.5 text-xs font-semibold text-primary transition-all hover:bg-card hover:text-primary active:scale-95"
+                  >
+                    ⌨️ Manual
                   </button>
                 </div>
                 {showResults && productResults.length > 0 && (
@@ -569,6 +590,7 @@ export default function SaleFormModal({
         open={scannerOpen}
         onClose={() => setScannerOpen(false)}
         onScan={handleCameraBarcodeScanned}
+        startWithManual={scannerManual}
       />
     </>
   )

@@ -7,6 +7,8 @@ interface BarcodeScannerModalProps {
   open: boolean
   onClose: () => void
   onScan: (code: string) => void
+  // Abre el modal directamente con el campo de ingreso manual visible
+  startWithManual?: boolean
 }
 
 type ScannerHandle = {
@@ -21,12 +23,17 @@ type Engine = 'starting' | 'html5' | 'zxing' | 'failed'
 // Escáner de códigos de barras compatible con iPhone/iOS (Safari):
 //  - Motor principal: html5-qrcode (usa el decoder ZXing internamente y setea playsInline).
 //  - Respaldo iOS: @zxing/library (BrowserMultiFormatReader) con <video playsInline>.
-//  - Fallback final: entrada manual del código si la cámara no inicia en 5 segundos.
-export default function BarcodeScannerModal({ open, onClose, onScan }: BarcodeScannerModalProps) {
+//  - Fallback final: ingreso manual del código (siempre disponible) y cierre
+//    automático de la cámara si no se detecta nada en 15 segundos.
+export default function BarcodeScannerModal({
+  open,
+  onClose,
+  onScan,
+  startWithManual = false,
+}: BarcodeScannerModalProps) {
   const [error, setError] = useState('')
   const [engine, setEngine] = useState<Engine>('starting')
   const [zxingActive, setZxingActive] = useState(false)
-  const [showManual, setShowManual] = useState(false)
   const [manualOpen, setManualOpen] = useState(false)
   const [manualCode, setManualCode] = useState('')
   const [torch, setTorch] = useState(false)
@@ -34,6 +41,8 @@ export default function BarcodeScannerModal({ open, onClose, onScan }: BarcodeSc
   const scannerRef = useRef<ScannerHandle | null>(null)
   const zxingRef = useRef<{ reset: () => void } | null>(null)
   const engineRef = useRef<Engine>('starting')
+  const permissionDeniedRef = useRef(false)
+  const noDetectTimerRef = useRef<number | null>(null)
   const onScanRef = useRef(onScan)
   onScanRef.current = onScan
 
@@ -42,8 +51,28 @@ export default function BarcodeScannerModal({ open, onClose, onScan }: BarcodeSc
     setEngine(e)
   }
 
-  // Detiene ambos motores (html5-qrcode y @zxing)
+  // Determina si el error de cámara se debe a permisos denegados (iOS/Safari)
+  const isPermissionError = (err: unknown): boolean => {
+    const name = (err as { name?: string })?.name ?? ''
+    const msg = String((err as { message?: string })?.message ?? '')
+    return (
+      name === 'NotAllowedError' ||
+      name === 'PermissionDeniedError' ||
+      name === 'SecurityError' ||
+      /permission|denied|denegado|not allowed/i.test(msg)
+    )
+  }
+
+  const clearNoDetectTimer = () => {
+    if (noDetectTimerRef.current) {
+      window.clearTimeout(noDetectTimerRef.current)
+      noDetectTimerRef.current = null
+    }
+  }
+
+  // Detiene ambos motores (html5-qrcode y @zxing) y el temporizador de 15s
   const stopAll = () => {
+    clearNoDetectTimer()
     if (scannerRef.current) {
       scannerRef.current.stop().catch(() => {})
       scannerRef.current.clear()
@@ -64,12 +93,27 @@ export default function BarcodeScannerModal({ open, onClose, onScan }: BarcodeSc
     if (!open) return
     setError('')
     setEngineState('starting')
-    setShowManual(false)
-    setManualOpen(false)
+    permissionDeniedRef.current = false
+    setManualOpen(startWithManual)
     setManualCode('')
     setTorch(false)
     setZxingActive(false)
     let cancelled = false
+
+    // Si la cámara está activa y no detecta nada en 15s, se detiene y se sugiere el ingreso manual
+    const armNoDetectTimeout = () => {
+      clearNoDetectTimer()
+      noDetectTimerRef.current = window.setTimeout(() => {
+        if (!cancelled) {
+          console.log('📷 Sin detección en 15s → deteniendo cámara')
+          toast.error(
+            '⚠️ No se detectó ningún código. Intenta enfocar mejor, usa el lector USB o ingresa el código manualmente.',
+          )
+          stopAll()
+          setEngineState('failed')
+        }
+      }, 15000)
+    }
 
     const startHtml5 = async (): Promise<boolean> => {
       try {
@@ -78,33 +122,37 @@ export default function BarcodeScannerModal({ open, onClose, onScan }: BarcodeSc
         const sc = new Html5Qrcode('barcode-scanner-region', {
           verbose: false,
           useBarCodeDetectorIfSupported: true,
-          // Formatos estándar de productos: QR + EAN-13 + UPC-A (compatibles con iOS)
+          // Formatos estándar de productos (compatibles con iOS)
           formatsToSupport: [
             Html5QrcodeSupportedFormats.QR_CODE,
             Html5QrcodeSupportedFormats.EAN_13,
             Html5QrcodeSupportedFormats.UPC_A,
+            Html5QrcodeSupportedFormats.CODE_128,
           ],
         })
         scannerRef.current = sc
+        console.log('📷 Iniciando cámara... (html5-qrcode)')
         await sc.start(
           { facingMode: 'environment' },
-          { fps: 10, qrbox: { width: 240, height: 160 } },
+          { fps: 10, qrbox: { width: 250, height: 250 }, aspectRatio: 1.0 },
           (decodedText: string) => {
-            // Depuración: verificar que el escaneo se ejecuta en el dispositivo
-            console.log('[electro-crm] Código de barras escaneado (html5-qrcode):', decodedText)
+            console.log('📷 Código detectado:', decodedText)
             stopAll()
             onScanRef.current(decodedText.trim())
           },
           () => {},
         )
         if (!cancelled) {
+          console.log('📷 Cámara iniciada correctamente (html5-qrcode)')
           setEngineState('html5')
+          armNoDetectTimeout()
           return true
         }
         return false
       } catch (err) {
         if (!cancelled) {
-          console.warn('[electro-crm] html5-qrcode no inició, probando @zxing:', err)
+          console.log('📷 Error al iniciar la cámara (html5-qrcode):', err)
+          if (isPermissionError(err)) permissionDeniedRef.current = true
         }
         return false
       }
@@ -130,22 +178,26 @@ export default function BarcodeScannerModal({ open, onClose, onScan }: BarcodeSc
         ])
         const reader = new BrowserMultiFormatReader(hints, 250)
         zxingRef.current = reader
+        console.log('📷 Iniciando cámara... (@zxing/library)')
         await reader.decodeFromVideoDevice(null, video, (result) => {
           if (result && !cancelled) {
             const text = result.getText()
-            console.log('[electro-crm] Código de barras escaneado (@zxing):', text)
+            console.log('📷 Código detectado:', text)
             stopAll()
             onScanRef.current(text.trim())
           }
         })
         if (!cancelled) {
+          console.log('📷 Cámara iniciada correctamente (@zxing)')
           setEngineState('zxing')
+          armNoDetectTimeout()
           return true
         }
         return false
       } catch (err) {
         if (!cancelled) {
-          console.warn('[electro-crm] @zxing no pudo iniciar la cámara:', err)
+          console.log('📷 Error al iniciar la cámara (@zxing):', err)
+          if (isPermissionError(err)) permissionDeniedRef.current = true
         }
         return false
       }
@@ -158,25 +210,25 @@ export default function BarcodeScannerModal({ open, onClose, onScan }: BarcodeSc
         const zxingOk = await startZxing()
         if (cancelled) return
         if (!zxingOk) {
-          setError('No se pudo acceder a la cámara. Revisa los permisos o ingresa el código manualmente.')
           setEngineState('failed')
+          if (permissionDeniedRef.current) {
+            setError(
+              '⚠️ Permiso de cámara denegado. Actívalo en Configuración → Safari → Cámara → Permitir.',
+            )
+          } else {
+            setError(
+              'No se pudo acceder a la cámara. Revisa los permisos o ingresa el código manualmente.',
+            )
+          }
         }
       }
     }
 
     start()
 
-    // Fallback manual: si en 5 segundos la cámara no está lista, se ofrece
-    // ingresar el código a mano (útil en iOS/Safari con permisos bloqueados).
-    const timeout = window.setTimeout(() => {
-      if (!cancelled && engineRef.current !== 'html5' && engineRef.current !== 'zxing') {
-        setShowManual(true)
-      }
-    }, 5000)
-
     return () => {
       cancelled = true
-      window.clearTimeout(timeout)
+      clearNoDetectTimer()
       stopAll()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -288,40 +340,39 @@ export default function BarcodeScannerModal({ open, onClose, onScan }: BarcodeSc
                   <p className="mt-2 text-center text-xs text-secondary">Activando cámara…</p>
                 )}
 
-                {showManual && (
-                  <div className="mt-3">
-                    {!manualOpen ? (
+                {/* Fallback manual: SIEMPRE disponible (junto al escaneo) */}
+                <div className="mt-3">
+                  {!manualOpen ? (
+                    <button
+                      type="button"
+                      onClick={() => setManualOpen(true)}
+                      className="flex min-h-[44px] w-full items-center justify-center gap-1.5 rounded-xl border border-app bg-card px-3 text-sm font-semibold text-primary transition-all hover:bg-card active:scale-95"
+                    >
+                      <Keyboard className="h-4 w-4" />
+                      ⌨️ Ingresar código manual
+                    </button>
+                  ) : (
+                    <form onSubmit={submitManual} className="flex gap-2">
+                      <input
+                        autoFocus
+                        value={manualCode}
+                        onChange={(e) => setManualCode(e.target.value)}
+                        placeholder="Ej. 7501234567890"
+                        inputMode="numeric"
+                        autoComplete="off"
+                        autoCapitalize="off"
+                        spellCheck={false}
+                        className="min-h-[44px] w-full rounded-xl border border-app bg-card px-3 text-sm text-primary placeholder:text-muted outline-none transition-colors focus:border-violet-400/60"
+                      />
                       <button
-                        type="button"
-                        onClick={() => setManualOpen(true)}
-                        className="flex min-h-[44px] w-full items-center justify-center gap-1.5 rounded-xl border border-app bg-card px-3 text-sm font-semibold text-primary transition-all hover:bg-card active:scale-95"
+                        type="submit"
+                        className="flex min-h-[44px] shrink-0 items-center justify-center rounded-xl bg-gradient-to-r from-violet-500 to-sky-500 px-4 text-sm font-semibold text-white shadow-lg shadow-violet-500/25 active:scale-95"
                       >
-                        <Keyboard className="h-4 w-4" />
-                        📷 Ingresar código manual
+                        Añadir
                       </button>
-                    ) : (
-                      <form onSubmit={submitManual} className="flex gap-2">
-                        <input
-                          autoFocus
-                          value={manualCode}
-                          onChange={(e) => setManualCode(e.target.value)}
-                          placeholder="Ej. 7501234567890"
-                          inputMode="numeric"
-                          autoComplete="off"
-                          autoCapitalize="off"
-                          spellCheck={false}
-                          className="min-h-[44px] w-full rounded-xl border border-app bg-card px-3 text-sm text-primary placeholder:text-muted outline-none transition-colors focus:border-violet-400/60"
-                        />
-                        <button
-                          type="submit"
-                          className="flex min-h-[44px] shrink-0 items-center justify-center rounded-xl bg-gradient-to-r from-violet-500 to-sky-500 px-4 text-sm font-semibold text-white shadow-lg shadow-violet-500/25 active:scale-95"
-                        >
-                          Añadir
-                        </button>
-                      </form>
-                    )}
-                  </div>
-                )}
+                    </form>
+                  )}
+                </div>
               </div>
             </motion.div>
           </div>
