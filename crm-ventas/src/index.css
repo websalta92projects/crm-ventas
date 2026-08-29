@@ -12,6 +12,19 @@ body,
   height: 100%;
 }
 
+/* Evitar scroll horizontal y desbordes en móvil/iPhone */
+html,
+body {
+  overflow-x: hidden;
+  max-width: 100%;
+  position: relative;
+}
+
+#root {
+  overflow-x: hidden;
+  max-width: 100%;
+}
+
 body {
   margin: 0;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;

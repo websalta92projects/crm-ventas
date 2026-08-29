@@ -261,8 +261,8 @@ export default function Budgets({ onCreateSale }: BudgetsProps) {
 
       {/* Tabla de presupuestos */}
       <div className="glass overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="data-table w-full text-left text-sm">
+        <div className="w-full overflow-x-hidden">
+          <table className="data-table w-full min-w-[600px] text-left text-sm md:min-w-full">
             <thead>
               <tr className="border-b border-white/10 bg-white/[0.02] text-xs text-slate-500">
                 <th className="px-5 py-3 font-medium">Folio</th>
