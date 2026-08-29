@@ -1,4 +1,4 @@
-import { create } from 'zustand'
+﻿import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type {
   Budget,
@@ -62,7 +62,6 @@ interface SalesStore {
   resetData: () => void
   resetAllData: () => void
 }
-
 const nowIso = () => new Date().toISOString()
 
 export const useSalesStore = create<SalesStore>()(
@@ -156,7 +155,6 @@ export const useSalesStore = create<SalesStore>()(
             budgets: markBudgetSale(state.budgets, data.budgetId),
           }
         }),
-
       // Elimina la venta y restaura el stock de todos sus productos
       removeSale: (id) =>
         set((state) => {
@@ -192,10 +190,7 @@ export const useSalesStore = create<SalesStore>()(
                 p.id === item.productId
                   ? {
                       ...p,
-                      stock: Math.max(
-                        0,
-                        p.stock + (restoring ? item.quantity : -item.quantity),
-                      ),
+                      stock: Math.max(0, p.stock + (restoring ? item.quantity : -item.quantity)),
                     }
                   : p,
               )
@@ -212,14 +207,15 @@ export const useSalesStore = create<SalesStore>()(
         set((state) => ({
           sales: state.sales.map((s) => (s.id === id ? { ...s, receiptNumber: number } : s)),
         })),
-
       // ===== PRODUCTOS =====
 
       saveProduct: (data) =>
         set((state) => {
           if (data.id) {
             return {
-              products: state.products.map((p) => (p.id === data.id ? { ...data, id: data.id } : p)),
+              products: state.products.map((p) =>
+                p.id === data.id ? { ...data, id: data.id } : p,
+              ),
             }
           }
           return { products: [...state.products, { ...data, id: uid() }] }
@@ -249,7 +245,7 @@ export const useSalesStore = create<SalesStore>()(
 
       // ===== PRESUPUESTOS =====
 
-      // Crea o actualiza un presupuesto (sin tocar stock)
+      // Crea o actualiza un presupuesto; el folio se genera desde Configuración
       saveBudget: (data) =>
         set((state) => {
           const items: BudgetItem[] = data.items
@@ -315,7 +311,7 @@ export const useSalesStore = create<SalesStore>()(
           ),
         })),
 
-      // ===== RESPALDO =====
+      // ===== DATOS =====
 
       restoreData: (data) =>
         set({
