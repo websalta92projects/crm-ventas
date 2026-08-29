@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import toast from 'react-hot-toast'
 import { Filter, PackageSearch, Plus, RotateCcw, Search } from 'lucide-react'
@@ -28,9 +28,8 @@ export default function Products({ refreshKey = 0 }: { refreshKey?: number }) {
   const [scannerManual, setScannerManual] = useState(false)
   // Código escaneado sin producto registrado (precarga el formulario de producto)
   const [preloadBarcode, setPreloadBarcode] = useState('')
-  // Producto encontrado por escaneo (se resalta brevemente en la lista)
-  const [highlightedId, setHighlightedId] = useState<string | null>(null)
-  const highlightTimerRef = useRef<number | null>(null)
+  // Código escaneado de un producto EXISTENTE: filtra la lista para mostrar solo ese producto
+  const [barcodeFilter, setBarcodeFilter] = useState('')
 
   // Categorías disponibles (se actualizan solas al agregar/editar productos)
   const categories = useMemo(
@@ -38,15 +37,16 @@ export default function Products({ refreshKey = 0 }: { refreshKey?: number }) {
     [products],
   )
 
-  // Búsqueda por nombre + filtro por categoría
+  // Búsqueda por nombre + filtro por categoría + filtro por escaneo de código de barras
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
     return products.filter((p) => {
+      const matchesBarcode = !barcodeFilter || (p.barcode && p.barcode.trim() === barcodeFilter)
       const matchesQuery = !q || p.name.toLowerCase().includes(q)
       const matchesCategory = category === 'all' || p.category === category
-      return matchesQuery && matchesCategory
+      return matchesBarcode && matchesQuery && matchesCategory
     })
-  }, [products, query, category, refreshKey])
+  }, [products, query, category, barcodeFilter, refreshKey])
 
   // Paginación: 10 productos por página
   const PAGE_SIZE = 10
@@ -57,7 +57,7 @@ export default function Products({ refreshKey = 0 }: { refreshKey?: number }) {
   // Al buscar o filtrar, vuelve a la primera página
   useEffect(() => {
     setPage(1)
-  }, [query, category])
+  }, [query, category, barcodeFilter])
 
   // Al cambiar de página, el scroll sube al principio de la lista
   useEffect(() => {
@@ -93,22 +93,33 @@ export default function Products({ refreshKey = 0 }: { refreshKey?: number }) {
     const product = products.find((p) => p.barcode && p.barcode.trim() === code.trim())
     if (product) {
       console.log('✅ Producto encontrado:', product.name)
-      // Limpia filtros y va a la página donde está el producto (resaltado)
-      setQuery('')
+      // Filtra la lista para mostrar SOLO ese producto (se ve en el buscador su nombre)
+      setQuery(product.name)
+      setBarcodeFilter(code.trim())
       setCategory('all')
-      const idx = products.findIndex((x) => x.id === product.id)
-      setPage(Math.floor(Math.max(0, idx) / PAGE_SIZE) + 1)
-      setHighlightedId(product.id)
-      if (highlightTimerRef.current) window.clearTimeout(highlightTimerRef.current)
-      highlightTimerRef.current = window.setTimeout(() => setHighlightedId(null), 3000)
-      openEdit(product)
+      setPage(1)
       toast.success('✅ Producto encontrado')
     } else {
       console.log('⚠️ Producto no encontrado para el código:', code)
-      setPreloadBarcode(code.trim())
-      setEditing(null)
-      setFormOpen(true)
-      toast.error('⚠️ Producto no encontrado. ¿Quieres crearlo?')
+      // Toast con acción "Crear": si el usuario acepta, abre el formulario con el código
+      const id = toast(
+        <div className="flex items-center gap-3">
+          <span>⚠️ Producto no encontrado. ¿Quieres crearlo?</span>
+          <button
+            type="button"
+            onClick={() => {
+              toast.dismiss(id)
+              setPreloadBarcode(code.trim())
+              setEditing(null)
+              setFormOpen(true)
+            }}
+            className="shrink-0 rounded-lg bg-gradient-to-r from-violet-500 to-sky-500 px-3 py-1.5 text-xs font-semibold text-white"
+          >
+            Crear
+          </button>
+        </div>,
+        { id: 'scan-not-found', duration: 8000 },
+      )
     }
   }
 
@@ -142,7 +153,11 @@ export default function Products({ refreshKey = 0 }: { refreshKey?: number }) {
           <Search className="h-4 w-4 shrink-0 text-muted" />
           <input
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => {
+              setQuery(e.target.value)
+              // Si el usuario escribe en el buscador, se quita el filtro por escaneo
+              setBarcodeFilter('')
+            }}
             placeholder="Buscar por nombre…"
             className="w-full bg-transparent text-sm text-primary placeholder:text-muted focus:outline-none"
           />
@@ -208,30 +223,40 @@ export default function Products({ refreshKey = 0 }: { refreshKey?: number }) {
         </button>
       </div>
 
-      <p className="text-xs text-muted">
-        {filtered.length} de {products.length} productos
-        {category !== 'all' && ` en «${category}»`}
-        {query.trim() && ` · buscando «${query.trim()}»`}
-      </p>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-xs text-muted">
+          {filtered.length} de {products.length} productos
+          {barcodeFilter ? ' · escaneado por código de barras' : ''}
+          {category !== 'all' && ` en «${category}»`}
+          {query.trim() && !barcodeFilter && ` · buscando «${query.trim()}»`}
+        </p>
+        {barcodeFilter && (
+          <button
+            type="button"
+            onClick={() => {
+              setBarcodeFilter('')
+              setQuery('')
+              setPage(1)
+            }}
+            className="shrink-0 rounded-lg border border-app bg-card px-3 py-1.5 text-xs font-semibold text-primary transition-all hover:bg-card active:scale-95"
+          >
+            Mostrar todos
+          </button>
+        )}
+      </div>
 
       {/* Grid de productos */}
       {filtered.length > 0 ? (
         <motion.div layout className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
           <AnimatePresence mode="popLayout">
             {pageItems.map((p) => (
-              <div
+              <ProductCard
                 key={p.id}
-                className={`rounded-2xl transition-shadow ${
-                  p.id === highlightedId ? 'ring-2 ring-violet-400' : ''
-                }`}
-              >
-                <ProductCard
-                  product={p}
-                  salesCount={salesCountByProduct.get(p.id) ?? 0}
-                  onEdit={() => openEdit(p)}
-                  onDelete={() => setDeleting(p)}
-                />
-              </div>
+                product={p}
+                salesCount={salesCountByProduct.get(p.id) ?? 0}
+                onEdit={() => openEdit(p)}
+                onDelete={() => setDeleting(p)}
+              />
             ))}
           </AnimatePresence>
         </motion.div>
