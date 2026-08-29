@@ -11,20 +11,26 @@ interface BarcodeScannerModalProps {
   startWithManual?: boolean
 }
 
-type ScannerHandle = {
-  stop: () => Promise<void>
-  clear: () => void
-  applyVideoConstraints?: (c: MediaTrackConstraints) => Promise<void>
+// Motor activo: 'starting' | 'detector' (BarcodeDetector API) | 'zxing' (@zxing) | 'failed'
+type Engine = 'starting' | 'detector' | 'zxing' | 'failed'
+
+type BarcodeDetectorInstance = {
+  detect: (source: HTMLVideoElement) => Promise<Array<{ rawValue: string }>>
 }
+type BarcodeDetectorCtor = new (options: { formats: string[] }) => BarcodeDetectorInstance
 
-// Motor activo: 'starting' (arrancando), 'html5' (html5-qrcode), 'zxing' (@zxing), 'failed'
-type Engine = 'starting' | 'html5' | 'zxing' | 'failed'
+const DETECTOR_FORMATS = ['qr_code', 'ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128']
 
-// Escáner de códigos de barras compatible con iPhone/iOS (Safari):
-//  - Motor principal: html5-qrcode (usa el decoder ZXing internamente y setea playsInline).
-//  - Respaldo iOS: @zxing/library (BrowserMultiFormatReader) con <video playsInline>.
-//  - Fallback final: ingreso manual del código (siempre disponible) y cierre
-//    automático de la cámara si no se detecta nada en 15 segundos.
+const PERMISSION_MSG =
+  '⚠️ Permiso de cámara denegado. Actívalo en Configuración → Safari → Cámara → Permitir.'
+const NO_DETECT_MSG = '⚠️ No se detectó ningún código. Ingresa el código manualmente.'
+const GENERIC_MSG =
+  'No se pudo acceder a la cámara. Revisa los permisos o ingresa el código manualmente.'
+
+// Escáner de códigos de barras con TRES capas (compatible iPhone/iOS):
+//   Capa 1: BarcodeDetector API (nativa) — rápida y confiable.
+//   Capa 2: @zxing/library (BrowserMultiFormatReader) si BarcodeDetector no está disponible.
+//   Capa 3: ingreso manual del código (siempre disponible).
 export default function BarcodeScannerModal({
   open,
   onClose,
@@ -33,22 +39,30 @@ export default function BarcodeScannerModal({
 }: BarcodeScannerModalProps) {
   const [error, setError] = useState('')
   const [engine, setEngine] = useState<Engine>('starting')
-  const [zxingActive, setZxingActive] = useState(false)
   const [manualOpen, setManualOpen] = useState(false)
   const [manualCode, setManualCode] = useState('')
   const [torch, setTorch] = useState(false)
 
-  const scannerRef = useRef<ScannerHandle | null>(null)
+  const videoRef = useRef<HTMLVideoElement | null>(null)
+  const streamRef = useRef<MediaStream | null>(null)
+  const detectorRef = useRef<BarcodeDetectorInstance | null>(null)
   const zxingRef = useRef<{ reset: () => void } | null>(null)
+  const rafRef = useRef<number | null>(null)
   const engineRef = useRef<Engine>('starting')
   const permissionDeniedRef = useRef(false)
   const noDetectTimerRef = useRef<number | null>(null)
+  const cancelledRef = useRef(false)
   const onScanRef = useRef(onScan)
   onScanRef.current = onScan
 
   const setEngineState = (e: Engine) => {
     engineRef.current = e
     setEngine(e)
+  }
+
+  const getBarcodeDetectorCtor = (): BarcodeDetectorCtor | null => {
+    if (typeof window === 'undefined' || !('BarcodeDetector' in window)) return null
+    return (window as unknown as { BarcodeDetector?: BarcodeDetectorCtor }).BarcodeDetector ?? null
   }
 
   // Determina si el error de cámara se debe a permisos denegados (iOS/Safari)
@@ -70,23 +84,29 @@ export default function BarcodeScannerModal({
     }
   }
 
-  // Detiene ambos motores (html5-qrcode y @zxing) y el temporizador de 15s
-  const stopAll = () => {
+  // Detiene el stream, el video, BarcodeDetector y ZXing (se llama al cerrar el modal)
+  const stopScanner = () => {
     clearNoDetectTimer()
-    if (scannerRef.current) {
-      scannerRef.current.stop().catch(() => {})
-      scannerRef.current.clear()
+    if (rafRef.current) {
+      cancelAnimationFrame(rafRef.current)
+      rafRef.current = null
     }
-    scannerRef.current = null
+    detectorRef.current = null
     if (zxingRef.current) {
       try {
         zxingRef.current.reset()
       } catch {
         // ya detenido
       }
+      zxingRef.current = null
     }
-    zxingRef.current = null
-    setZxingActive(false)
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop())
+      streamRef.current = null
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null
+    }
   }
 
   useEffect(() => {
@@ -94,151 +114,138 @@ export default function BarcodeScannerModal({
     setError('')
     setEngineState('starting')
     permissionDeniedRef.current = false
+    cancelledRef.current = false
     setManualOpen(startWithManual)
     setManualCode('')
     setTorch(false)
-    setZxingActive(false)
-    let cancelled = false
 
-    // Si la cámara está activa y no detecta nada en 15s, se detiene y se sugiere el ingreso manual
+    // Si la cámara está activa y no detecta nada en 15s, se detiene y se ofrece el manual
     const armNoDetectTimeout = () => {
       clearNoDetectTimer()
       noDetectTimerRef.current = window.setTimeout(() => {
-        if (!cancelled) {
-          console.log('📷 Sin detección en 15s → deteniendo cámara')
-          toast.error(
-            '⚠️ No se detectó ningún código. Intenta enfocar mejor, usa el lector USB o ingresa el código manualmente.',
-          )
-          stopAll()
+        if (!cancelledRef.current) {
+          console.log('📷 Sin detección en 15s → deteniendo escáner')
+          toast.error(NO_DETECT_MSG)
+          stopScanner()
           setEngineState('failed')
         }
       }, 15000)
     }
 
-    const startHtml5 = async (): Promise<boolean> => {
-      try {
-        const { Html5Qrcode, Html5QrcodeSupportedFormats } = await import('html5-qrcode')
-        if (cancelled) return false
-        const sc = new Html5Qrcode('barcode-scanner-region', {
-          verbose: false,
-          useBarCodeDetectorIfSupported: true,
-          // Formatos estándar de productos (compatibles con iOS)
-          formatsToSupport: [
-            Html5QrcodeSupportedFormats.QR_CODE,
-            Html5QrcodeSupportedFormats.EAN_13,
-            Html5QrcodeSupportedFormats.UPC_A,
-            Html5QrcodeSupportedFormats.CODE_128,
-          ],
-        })
-        scannerRef.current = sc
-        console.log('📷 Iniciando cámara... (html5-qrcode)')
-        await sc.start(
-          { facingMode: 'environment' },
-          { fps: 10, qrbox: { width: 250, height: 250 }, aspectRatio: 1.0 },
-          (decodedText: string) => {
-            console.log('📷 Código detectado:', decodedText)
-            stopAll()
-            onScanRef.current(decodedText.trim())
-          },
-          () => {},
-        )
-        if (!cancelled) {
-          console.log('📷 Cámara iniciada correctamente (html5-qrcode)')
-          setEngineState('html5')
-          armNoDetectTimeout()
-          return true
+    // ---------- Capa 1: BarcodeDetector API (nativa) ----------
+    const startWithBarcodeDetector = async (): Promise<boolean> => {
+      const video = videoRef.current
+      if (!video) return false
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
+        audio: false,
+      })
+      streamRef.current = stream
+      video.srcObject = stream
+      await video.play()
+      const Ctor = getBarcodeDetectorCtor()
+      if (!Ctor) return false
+      const detector = new Ctor({ formats: DETECTOR_FORMATS })
+      detectorRef.current = detector
+      const loop = async () => {
+        if (cancelledRef.current) return
+        try {
+          const codes = await detector.detect(video)
+          if (codes.length > 0) {
+            console.log('📷 Código detectado:', codes[0].rawValue)
+            stopScanner()
+            onScanRef.current(codes[0].rawValue.trim())
+            return
+          }
+        } catch (err) {
+          console.log('📷 BarcodeDetector error:', err)
         }
-        return false
-      } catch (err) {
-        if (!cancelled) {
-          console.log('📷 Error al iniciar la cámara (html5-qrcode):', err)
-          if (isPermissionError(err)) permissionDeniedRef.current = true
-        }
-        return false
+        rafRef.current = requestAnimationFrame(loop)
       }
+      loop()
+      setEngineState('detector')
+      return true
     }
 
-    const startZxing = async (): Promise<boolean> => {
-      try {
-        const { BrowserMultiFormatReader, DecodeHintType, BarcodeFormat } = await import(
-          '@zxing/library',
-        )
-        if (cancelled) return false
-        const video = document.getElementById('barcode-scanner-video') as HTMLVideoElement | null
-        if (!video) return false
-        // El video debe estar visible y con dimensiones para que @zxing pueda decodificar
-        video.classList.remove('hidden')
-        setZxingActive(true)
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const hints = new Map()
-        hints.set(DecodeHintType.POSSIBLE_FORMATS, [
-          BarcodeFormat.QR_CODE,
-          BarcodeFormat.EAN_13,
-          BarcodeFormat.UPC_A,
-        ])
-        const reader = new BrowserMultiFormatReader(hints, 250)
-        zxingRef.current = reader
-        console.log('📷 Iniciando cámara... (@zxing/library)')
-        await reader.decodeFromVideoDevice(null, video, (result) => {
-          if (result && !cancelled) {
-            const text = result.getText()
-            console.log('📷 Código detectado:', text)
-            stopAll()
-            onScanRef.current(text.trim())
-          }
-        })
-        if (!cancelled) {
-          console.log('📷 Cámara iniciada correctamente (@zxing)')
-          setEngineState('zxing')
-          armNoDetectTimeout()
-          return true
-        }
-        return false
-      } catch (err) {
-        if (!cancelled) {
-          console.log('📷 Error al iniciar la cámara (@zxing):', err)
-          if (isPermissionError(err)) permissionDeniedRef.current = true
-        }
-        return false
+    // ---------- Capa 2: ZXing (fallback) ----------
+    const startWithZxing = async (): Promise<boolean> => {
+      const video = videoRef.current
+      if (!video) return false
+      // Si quedó un stream de la capa 1, se detiene (ZXing adquiere el suyo)
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => track.stop())
+        streamRef.current = null
       }
+      const { BrowserMultiFormatReader } = await import('@zxing/library')
+      const reader = new BrowserMultiFormatReader()
+      zxingRef.current = reader
+      await reader.decodeFromVideoDevice(null, video, (result) => {
+        if (result && !cancelledRef.current) {
+          console.log('📷 Código detectado:', result.getText())
+          stopScanner()
+          onScanRef.current(result.getText().trim())
+        }
+      })
+      setEngineState('zxing')
+      return true
     }
 
     const start = async () => {
-      const html5Ok = await startHtml5()
-      if (cancelled) return
-      if (!html5Ok) {
-        const zxingOk = await startZxing()
-        if (cancelled) return
-        if (!zxingOk) {
-          setEngineState('failed')
-          if (permissionDeniedRef.current) {
-            setError(
-              '⚠️ Permiso de cámara denegado. Actívalo en Configuración → Safari → Cámara → Permitir.',
-            )
-          } else {
-            setError(
-              'No se pudo acceder a la cámara. Revisa los permisos o ingresa el código manualmente.',
-            )
+      // Capa 1: BarcodeDetector (Chrome/Android/Firefox; en iPhone cae a ZXing)
+      if (getBarcodeDetectorCtor()) {
+        console.log('📷 Intentando BarcodeDetector...')
+        try {
+          const ok = await startWithBarcodeDetector()
+          if (cancelledRef.current) return
+          if (ok) {
+            console.log('📷 BarcodeDetector activo')
+            armNoDetectTimeout()
+            return
           }
+        } catch (err) {
+          console.log('📷 Error al iniciar BarcodeDetector:', err)
+          if (isPermissionError(err)) permissionDeniedRef.current = true
         }
+      } else {
+        console.log('📷 BarcodeDetector NO disponible → usando ZXing')
       }
+
+      // Capa 2: ZXing
+      try {
+        console.log('📷 Intentando ZXing...')
+        const ok = await startWithZxing()
+        if (cancelledRef.current) return
+        if (ok) {
+          console.log('📷 ZXing activo')
+          armNoDetectTimeout()
+          return
+        }
+      } catch (err) {
+        console.log('📷 Error al iniciar ZXing:', err)
+        if (isPermissionError(err)) permissionDeniedRef.current = true
+      }
+
+      // Capa 3: solo ingreso manual
+      setEngineState('failed')
+      setError(permissionDeniedRef.current ? PERMISSION_MSG : GENERIC_MSG)
     }
 
     start()
 
+    // Cleanup: detiene la cámara al cerrar el modal / desmontar el componente
     return () => {
-      cancelled = true
-      clearNoDetectTimer()
-      stopAll()
+      cancelledRef.current = true
+      stopScanner()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open])
 
   const toggleTorch = async () => {
-    const scanner = scannerRef.current
-    if (!scanner?.applyVideoConstraints) return
+    const stream = videoRef.current?.srcObject as MediaStream | null
+    const track = stream?.getVideoTracks()[0]
+    if (!track || typeof track.applyConstraints !== 'function') return
     try {
-      await scanner.applyVideoConstraints({
+      await track.applyConstraints({
         advanced: [{ torch: !torch }],
       } as unknown as MediaTrackConstraints)
       setTorch(!torch)
@@ -254,10 +261,12 @@ export default function BarcodeScannerModal({
       toast.error('Escribe el código de barras')
       return
     }
-    console.log('[electro-crm] Código de barras manual:', code)
-    stopAll()
+    console.log('📷 Código manual:', code)
+    stopScanner()
     onScanRef.current(code)
   }
+
+  const cameraActive = engine === 'detector' || engine === 'zxing'
 
   return (
     <AnimatePresence>
@@ -284,7 +293,7 @@ export default function BarcodeScannerModal({
                   <h3 className="text-sm font-bold text-primary">Escanear código de barras</h3>
                 </div>
                 <div className="flex items-center gap-2">
-                  {engine === 'html5' && (
+                  {cameraActive && (
                     <button
                       type="button"
                       onClick={toggleTorch}
@@ -309,28 +318,26 @@ export default function BarcodeScannerModal({
                 </div>
               </div>
               <div className="px-4 pb-4">
-                <div className="relative mx-auto max-w-sm overflow-hidden rounded-xl bg-slate-950/80">
-                  {/* Motor html5-qrcode: inyecta su propio <video> aquí */}
-                  <div id="barcode-scanner-region" className={zxingActive ? 'hidden' : ''} />
-                  {/* Motor @zxing: <video playsInline> propio (requerido por iOS/Safari) */}
+                {/* Video de la cámara en tiempo real (getUserMedia) */}
+                <div className="mx-auto max-w-sm overflow-hidden rounded-xl bg-slate-950/80">
                   <video
-                    id="barcode-scanner-video"
+                    ref={videoRef}
                     playsInline
+                    autoPlay
                     muted
-                    className={`${
-                      zxingActive ? 'block h-64 w-full object-cover' : 'hidden'
-                    }`}
+                    style={{ width: '100%', height: 'auto', maxHeight: '400px' }}
+                    className="block"
                   />
                 </div>
                 {error ? (
                   <p className="mt-2 text-center text-xs text-rose-400">{error}</p>
-                ) : engine === 'html5' ? (
+                ) : engine === 'detector' ? (
                   <p className="mt-2 text-center text-xs text-secondary">
                     Apunta la cámara al código de barras del producto
                   </p>
                 ) : engine === 'zxing' ? (
                   <p className="mt-2 text-center text-xs text-secondary">
-                    Apunta la cámara al código (modo compatibilidad iOS)
+                    Apunta la cámara al código (modo compatibilidad)
                   </p>
                 ) : engine === 'failed' ? (
                   <p className="mt-2 text-center text-xs text-secondary">
@@ -340,7 +347,7 @@ export default function BarcodeScannerModal({
                   <p className="mt-2 text-center text-xs text-secondary">Activando cámara…</p>
                 )}
 
-                {/* Fallback manual: SIEMPRE disponible (junto al escaneo) */}
+                {/* Capa 3: ingreso manual (SIEMPRE disponible) */}
                 <div className="mt-3">
                   {!manualOpen ? (
                     <button
