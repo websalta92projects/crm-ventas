@@ -160,7 +160,7 @@ export default function Sales({ initialBudgetId, onBudgetConsumed }: SalesProps)
         onClick: () => changeStatus(sale, 'pagado', 'Cobro registrado 💰'),
       })
     }
-    if (sale.status === 'pagado') {
+    if (sale.status === 'pagado' || sale.status === 'entregado') {
       a.push({
         key: 'receipt',
         icon: <FileText className="h-4 w-4 text-emerald-300" />,
@@ -179,6 +179,8 @@ export default function Sales({ initialBudgetId, onBudgetConsumed }: SalesProps)
         label: 'WhatsApp',
         onClick: () => handleReceiptWhatsApp(sale),
       })
+    }
+    if (sale.status === 'pagado') {
       a.push({
         key: 'deliver',
         icon: <PackageCheck className="h-4 w-4 text-sky-300" />,
@@ -380,7 +382,7 @@ export default function Sales({ initialBudgetId, onBudgetConsumed }: SalesProps)
                     onClick: () => changeStatus(sale, 'pagado', 'Cobro registrado 💰'),
                   })
                 }
-                if (sale.status === 'pagado') {
+                if (sale.status === 'pagado' || sale.status === 'entregado') {
                   actions.push({
                     key: 'receipt',
                     icon: <FileText className="h-4 w-4 text-emerald-300" />,
@@ -399,6 +401,8 @@ export default function Sales({ initialBudgetId, onBudgetConsumed }: SalesProps)
                     label: 'WhatsApp',
                     onClick: () => handleReceiptWhatsApp(sale),
                   })
+                }
+                if (sale.status === 'pagado') {
                   actions.push({
                     key: 'deliver',
                     icon: <PackageCheck className="h-4 w-4 text-sky-300" />,
