@@ -1,10 +1,11 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import toast from 'react-hot-toast'
 import { Filter, PackageSearch, Plus, RotateCcw, Search } from 'lucide-react'
 import ProductCard from '../components/products/ProductCard'
 import ProductFormModal from '../components/products/ProductFormModal'
 import ConfirmModal from '../components/products/ConfirmModal'
+import Pagination from '../components/ui/Pagination'
 import { useSalesStore } from '../store/salesStore'
 import type { Product } from '../types'
 
@@ -20,6 +21,7 @@ export default function Products() {
   const [editing, setEditing] = useState<Product | null>(null)
   const [deleting, setDeleting] = useState<Product | null>(null)
   const [resetOpen, setResetOpen] = useState(false)
+  const [page, setPage] = useState(1)
 
   // Categorías disponibles (se actualizan solas al agregar/editar productos)
   const categories = useMemo(
@@ -36,6 +38,22 @@ export default function Products() {
       return matchesQuery && matchesCategory
     })
   }, [products, query, category])
+
+  // Paginación: 10 productos por página
+  const PAGE_SIZE = 10
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
+  const safePage = Math.min(page, totalPages)
+  const pageItems = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE)
+
+  // Al buscar o filtrar, vuelve a la primera página
+  useEffect(() => {
+    setPage(1)
+  }, [query, category])
+
+  // Al cambiar de página, el scroll sube al principio de la lista
+  useEffect(() => {
+    document.getElementById('main-content')?.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [safePage])
 
   // Conteo de ventas por producto (para avisar antes de eliminar)
   const salesCountByProduct = useMemo(() => {
@@ -132,7 +150,7 @@ export default function Products() {
       {filtered.length > 0 ? (
         <motion.div layout className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
           <AnimatePresence mode="popLayout">
-            {filtered.map((p) => (
+            {pageItems.map((p) => (
               <ProductCard
                 key={p.id}
                 product={p}
@@ -155,6 +173,8 @@ export default function Products() {
           </button>
         </div>
       )}
+
+      <Pagination page={safePage} totalPages={totalPages} onPageChange={setPage} />
 
       {/* Formulario crear / editar */}
       <ProductFormModal open={formOpen} product={editing} onClose={() => setFormOpen(false)} />

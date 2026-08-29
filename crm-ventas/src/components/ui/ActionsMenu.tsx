@@ -75,7 +75,7 @@ export default function ActionsMenu({ items }: ActionsMenuProps) {
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={toggle}
-        className="glass glass-hover flex min-h-[44px] items-center gap-1.5 rounded-xl px-3 text-xs font-medium text-slate-200 transition-all active:scale-95"
+        className="glass glass-hover flex min-h-[44px] min-w-[44px] items-center gap-1.5 rounded-xl px-3 text-xs font-medium text-slate-200 transition-all active:scale-95"
       >
         <Settings2 className="h-4 w-4" />
         <span>Acciones</span>

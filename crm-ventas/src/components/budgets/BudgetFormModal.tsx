@@ -9,7 +9,6 @@ import {
   Plus,
   Search,
   Send,
-  Trash2,
   UserPlus,
   X,
 } from 'lucide-react'
@@ -98,6 +97,17 @@ export default function BudgetFormModal({ open, budget, onClose }: BudgetFormMod
           l.productId === productId ? { ...l, quantity: Math.max(0, l.quantity + delta) } : l,
         )
         .filter((l) => l.quantity > 0),
+    )
+  }
+
+  // Permite teclear una cantidad exacta en el input del carrito
+  const setQty = (productId: string, quantity: number) => {
+    const q = Math.floor(quantity)
+    if (!Number.isFinite(q)) return
+    setCart((prev) =>
+      q <= 0
+        ? prev.filter((l) => l.productId !== productId)
+        : prev.map((l) => (l.productId === productId ? { ...l, quantity: q } : l)),
     )
   }
 
@@ -247,11 +257,11 @@ export default function BudgetFormModal({ open, budget, onClose }: BudgetFormMod
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.92, y: 20 }}
               transition={{ type: 'spring', stiffness: 300, damping: 26 }}
-              className="glass-strong my-4 w-[95%] max-h-[90vh] max-w-lg overflow-y-auto p-6"
+              className="glass-strong my-4 w-[95%] max-h-[90vh] max-w-lg overflow-y-auto p-4 sm:p-6"
             >
-              <div className="mb-5 flex items-center justify-between">
+              <div className="mb-4 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-sky-500 shadow-lg shadow-violet-500/30">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-sky-500 shadow-lg shadow-violet-500/30">
                     <FileText className="h-5 w-5 text-white" />
                   </div>
                   <div>
@@ -265,69 +275,96 @@ export default function BudgetFormModal({ open, budget, onClose }: BudgetFormMod
                 </div>
                 <button
                   onClick={onClose}
-                  className="rounded-lg p-1.5 text-slate-400 hover:bg-white/10 hover:text-white"
+                  title="Cerrar"
+                  aria-label="Cerrar"
+                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-slate-400 transition-colors hover:bg-white/10 hover:text-white"
                 >
                   <X className="h-5 w-5" />
                 </button>
               </div>
 
-              {/* Cliente: buscador + crear nuevo */}
-              <div className="relative mb-4">
-                <label className="mb-1.5 block text-xs font-medium text-slate-400">
-                  Cliente *
-                </label>
-                <div className="glass flex items-center gap-2 rounded-xl px-3 py-2">
-                  <Search className="h-4 w-4 shrink-0 text-slate-500" />
-                  <input
-                    value={customer ? customer.name : customerQuery}
-                    onChange={(e) => {
-                      // Si el usuario escribe, deselecciona el cliente actual (está buscando otro)
-                      setCustomerQuery(e.target.value)
+              <div className="space-y-4">
+
+              {/* Cliente: tarjeta seleccionada o buscador */}
+              {customer ? (
+                <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.04] p-4">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-sky-500 text-xs font-bold text-white">
+                    {customer.name.slice(0, 2).toUpperCase()}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold text-white">{customer.name}</p>
+                    <p className="truncate text-xs text-slate-400">
+                      {customer.phone || 'Sin teléfono'}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
                       setCustomerId('')
+                      setCustomerQuery('')
                       setShowCustomers(true)
                     }}
-                    onFocus={() => setShowCustomers(true)}
-                    placeholder="Buscar cliente…"
-                    className="w-full bg-transparent text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none"
-                  />
+                    className="glass glass-hover flex min-h-[44px] shrink-0 items-center gap-1.5 rounded-xl px-3 text-xs font-medium text-sky-300"
+                  >
+                    Cambiar cliente
+                  </button>
                 </div>
-                {showCustomers && (
-                  <div className="absolute z-50 mt-1 w-full overflow-hidden rounded-xl border border-white/10 bg-slate-900/95 shadow-xl backdrop-blur-md">
-                    {customerResults.map((c) => (
+              ) : (
+                <div className="relative">
+                  <label className="mb-1.5 block text-xs font-medium text-slate-400">
+                    Cliente *
+                  </label>
+                  <div className="glass flex items-center gap-2 rounded-xl px-3 py-2">
+                    <Search className="h-4 w-4 shrink-0 text-slate-500" />
+                    <input
+                      value={customerQuery}
+                      onChange={(e) => {
+                        setCustomerQuery(e.target.value)
+                        setShowCustomers(true)
+                      }}
+                      onFocus={() => setShowCustomers(true)}
+                      placeholder="Buscar cliente…"
+                      className="w-full bg-transparent text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none"
+                    />
+                  </div>
+                  {showCustomers && (
+                    <div className="absolute z-50 mt-1 w-full overflow-hidden rounded-xl border border-white/10 bg-slate-900/95 shadow-xl backdrop-blur-md">
+                      {customerResults.map((c) => (
+                        <button
+                          type="button"
+                          key={c.id}
+                          onClick={() => {
+                            setCustomerId(c.id)
+                            setCustomerQuery('')
+                            setShowCustomers(false)
+                          }}
+                          className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-200 transition-colors hover:bg-white/10"
+                        >
+                          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white/10 text-[10px] font-bold text-white">
+                            {c.name.slice(0, 2).toUpperCase()}
+                          </span>
+                          <span className="min-w-0 flex-1 truncate">{c.name}</span>
+                          <span className="text-xs text-slate-500">{c.phone}</span>
+                        </button>
+                      ))}
                       <button
                         type="button"
-                        key={c.id}
                         onClick={() => {
-                          setCustomerId(c.id)
-                          setCustomerQuery('')
                           setShowCustomers(false)
+                          setCustomerModalOpen(true)
                         }}
-                        className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-200 transition-colors hover:bg-white/10"
+                        className="flex w-full items-center gap-2 border-t border-white/10 px-3 py-2 text-left text-sm font-medium text-sky-300 transition-colors hover:bg-white/10"
                       >
-                        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white/10 text-[10px] font-bold text-white">
-                          {c.name.slice(0, 2).toUpperCase()}
-                        </span>
-                        <span className="min-w-0 flex-1 truncate">{c.name}</span>
-                        <span className="text-xs text-slate-500">{c.phone}</span>
+                        <UserPlus className="h-4 w-4" />
+                        Crear cliente nuevo…
                       </button>
-                    ))}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowCustomers(false)
-                        setCustomerModalOpen(true)
-                      }}
-                      className="flex w-full items-center gap-2 border-t border-white/10 px-3 py-2 text-left text-sm font-medium text-sky-300 transition-colors hover:bg-white/10"
-                    >
-                      <UserPlus className="h-4 w-4" />
-                      Crear cliente nuevo…
-                    </button>
-                  </div>
-                )}
-              </div>
+                    </div>
+                  )}
+                </div>
+              )}
 
-              {/* Buscador de productos */}
-              <div className="relative mb-4">
+              {/* Agregar producto */}
+              <div className="relative">
                 <label className="mb-1.5 block text-xs font-medium text-slate-400">
                   Agregar producto
                 </label>
@@ -346,134 +383,201 @@ export default function BudgetFormModal({ open, budget, onClose }: BudgetFormMod
                 </div>
                 {showProducts && productResults.length > 0 && (
                   <div className="absolute z-50 mt-1 w-full overflow-hidden rounded-xl border border-white/10 bg-slate-900/95 shadow-xl backdrop-blur-md">
-                    {productResults.map((p) => (
-                      <button
-                        type="button"
-                        key={p.id}
-                        onClick={() => addProduct(p)}
-                        className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-200 transition-colors hover:bg-white/10"
-                      >
-                        <span className="text-lg">{p.emoji}</span>
-                        <span className="min-w-0 flex-1 truncate">{p.name}</span>
-                        <span className="text-xs text-slate-400">
-                          {formatMoney(p.price)} · {p.stock} u.
-                        </span>
-                      </button>
-                    ))}
+                    {productResults.map((p) => {
+                      const inCart = cart.some((l) => l.productId === p.id)
+                      return (
+                        <div
+                          key={p.id}
+                          className="flex items-center gap-2 border-b border-white/5 px-3 py-2 last:border-0"
+                        >
+                          <span className="text-lg">{p.emoji}</span>
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm text-slate-200">{p.name}</p>
+                            <p className="text-[11px] text-slate-500">
+                              {formatMoney(p.price)} · {p.stock} u.
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => addProduct(p)}
+                            className={`flex min-h-[44px] shrink-0 items-center gap-1 rounded-xl px-3 text-xs font-semibold transition-all active:scale-95 ${
+                              inCart
+                                ? 'border border-sky-400/40 bg-sky-500/15 text-sky-300 hover:bg-sky-500/25'
+                                : 'bg-gradient-to-r from-violet-500 to-sky-500 text-white shadow-lg shadow-violet-500/25 hover:brightness-110'
+                            }`}
+                          >
+                            <Plus className="h-3.5 w-3.5" />
+                            {inCart ? 'Agregar +1' : 'Agregar'}
+                          </button>
+                        </div>
+                      )
+                    })}
                   </div>
+                )}
+                {productQuery.trim() !== '' && productResults.length === 0 && (
+                  <p className="mt-1 text-xs text-slate-500">
+                    Sin resultados para «{productQuery.trim()}».
+                  </p>
                 )}
               </div>
 
               {/* Carrito */}
-              {lines.length > 0 ? (
-                <div className="mb-4 space-y-2">
-                  {lines.map((l) => (
-                    <motion.div
-                      key={l.product.id}
-                      layout
-                      initial={{ opacity: 0, y: 6 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="flex items-center gap-3 rounded-xl border border-white/5 bg-white/[0.03] px-3 py-2.5"
+              <div>
+                <div className="mb-1.5 flex items-center justify-between">
+                  <label className="block text-xs font-medium text-slate-400">
+                    Carrito ({lines.length})
+                  </label>
+                  {lines.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setCart([])}
+                      className="text-xs font-medium text-rose-400 transition-colors hover:text-rose-300"
                     >
-                      <span className="text-lg">{l.product.emoji}</span>
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium text-white">{l.product.name}</p>
-                        <p className="text-[11px] text-slate-500">
-                          {formatMoney(l.product.price)} / u.
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <button
-                          type="button"
-                          onClick={() => changeQty(l.product.id, -1)}
-                          className="rounded-lg bg-white/[0.06] p-1 text-slate-300 hover:bg-white/[0.12]"
-                        >
-                          <Minus className="h-3.5 w-3.5" />
-                        </button>
-                        <span className="w-8 text-center text-sm font-semibold text-white">
-                          {l.qty}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => changeQty(l.product.id, 1)}
-                          className="rounded-lg bg-white/[0.06] p-1 text-slate-300 hover:bg-white/[0.12]"
-                        >
-                          <Plus className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                      <span className="w-20 text-right text-sm font-semibold text-white">
-                        {formatMoney(l.product.price * l.qty)}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => removeLine(l.product.id)}
-                        className="rounded-lg p-1 text-slate-500 hover:bg-rose-500/15 hover:text-rose-400"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </motion.div>
-                  ))}
+                      Vaciar carrito
+                    </button>
+                  )}
                 </div>
-              ) : (
-                <p className="mb-4 rounded-xl border border-dashed border-white/10 px-3 py-4 text-center text-xs text-slate-500">
-                  Carrito vacío. Busca un producto para agregarlo.
-                </p>
-              )}
+                {lines.length > 0 ? (
+                  <div className="max-h-[300px] space-y-2 overflow-y-auto pr-1">
+                    {lines.map((l) => (
+                      <motion.div
+                        key={l.product.id}
+                        layout
+                        initial={{ opacity: 0, y: 6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="rounded-xl border border-white/5 bg-white/[0.03] p-4"
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="text-lg">{l.product.emoji}</span>
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-medium text-white">{l.product.name}</p>
+                            <p className="text-[11px] text-slate-500">
+                              {formatMoney(l.product.price)} / u.
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => removeLine(l.product.id)}
+                            title="Eliminar del carrito"
+                            aria-label={`Eliminar ${l.product.name} del carrito`}
+                            className="flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-xl text-slate-500 transition-colors hover:bg-rose-500/15 hover:text-rose-400"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
+                        <div className="mt-2 flex items-center justify-between gap-2">
+                          <div className="flex shrink-0 items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={() => changeQty(l.product.id, -1)}
+                              title="Disminuir cantidad"
+                              aria-label="Disminuir cantidad"
+                              className="flex h-[44px] w-[44px] items-center justify-center rounded-lg bg-white/[0.06] text-slate-300 transition-colors hover:bg-white/[0.12] active:scale-95"
+                            >
+                              <Minus className="h-4 w-4" />
+                            </button>
+                            <input
+                              type="number"
+                              min={1}
+                              value={l.qty}
+                              onChange={(e) => setQty(l.product.id, Number(e.target.value))}
+                              aria-label={`Cantidad de ${l.product.name}`}
+                              className="h-[44px] w-14 rounded-lg border border-white/10 bg-white/[0.06] text-center text-sm font-semibold text-white outline-none transition-colors focus:border-violet-400/60"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => changeQty(l.product.id, 1)}
+                              title="Aumentar cantidad"
+                              aria-label="Aumentar cantidad"
+                              className="flex h-[44px] w-[44px] items-center justify-center rounded-lg bg-white/[0.06] text-slate-300 transition-colors hover:bg-white/[0.12] active:scale-95"
+                            >
+                              <Plus className="h-4 w-4" />
+                            </button>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-[10px] uppercase tracking-wide text-slate-500">
+                              Subtotal
+                            </p>
+                            <p className="text-sm font-bold text-white">
+                              {formatMoney(l.product.price * l.qty)}
+                            </p>
+                          </div>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="rounded-xl border border-dashed border-white/10 px-3 py-6 text-center text-xs text-slate-500">
+                    No hay productos agregados
+                  </p>
+                )}
+              </div>
 
-              {/* Resumen con impuestos */}
-              <div className="mb-4 rounded-xl border border-white/10 bg-white/[0.03] p-4 text-sm">
+              {/* Totales destacados */}
+              <div className="rounded-xl border border-violet-400/20 bg-gradient-to-br from-violet-500/10 to-sky-500/10 p-4 text-sm shadow-lg shadow-violet-500/10">
                 <div className="flex justify-between text-slate-400">
                   <span>Subtotal</span>
                   <span className="font-semibold text-white">{formatMoney(subtotal)}</span>
                 </div>
-                <div className="mt-1.5 flex justify-between text-slate-400">
+                <div className="mt-2 flex justify-between text-slate-400">
                   <span>Impuestos ({Math.round(TAX_RATE * 100)}%)</span>
                   <span className="font-semibold text-slate-300">{formatMoney(tax)}</span>
                 </div>
-                <div className="mt-1.5 flex justify-between border-t border-white/10 pt-1.5 text-slate-400">
-                  <span>Total</span>
-                  <span className="font-bold text-emerald-400">{formatMoney(total)}</span>
+                <div className="mt-2 flex justify-between border-t border-white/10 pt-2">
+                  <span className="font-semibold text-white">Total</span>
+                  <span className="text-lg font-extrabold text-emerald-300">
+                    {formatMoney(total)}
+                  </span>
                 </div>
               </div>
 
-              {/* Acciones */}
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                <button
-                  onClick={handlePdf}
-                  className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 px-3 py-2.5 text-xs font-semibold text-white shadow-lg shadow-emerald-500/25 transition-all hover:brightness-110 active:scale-95"
-                >
-                  <FileText className="h-4 w-4" />
-                  📄 Generar PDF
-                </button>
-                <button
-                  onClick={handleWhatsApp}
-                  className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 px-3 py-2.5 text-xs font-semibold text-white shadow-lg shadow-green-500/25 transition-all hover:brightness-110 active:scale-95"
-                >
-                  <MessageCircle className="h-4 w-4" />
-                  📤 Enviar por WhatsApp
-                </button>
+              {/* Acciones: fila 1 (PDF / WhatsApp / Copiar) + fila 2 (guardar / enviar) */}
+              <div className="space-y-2">
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    onClick={handlePdf}
+                    title="Generar PDF"
+                    aria-label="Generar PDF"
+                    className="flex min-h-[44px] items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 px-2 py-2 text-[11px] font-semibold text-white shadow-lg shadow-emerald-500/25 transition-all hover:brightness-110 active:scale-95"
+                  >
+                    <FileText className="h-4 w-4" />
+                    PDF
+                  </button>
+                  <button
+                    onClick={handleWhatsApp}
+                    title="Enviar por WhatsApp"
+                    aria-label="Enviar por WhatsApp"
+                    className="flex min-h-[44px] items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 px-2 py-2 text-[11px] font-semibold text-white shadow-lg shadow-green-500/25 transition-all hover:brightness-110 active:scale-95"
+                  >
+                    <MessageCircle className="h-4 w-4" />
+                    WhatsApp
+                  </button>
+                  <button
+                    onClick={copyToWhatsApp}
+                    title="Copiar texto"
+                    aria-label="Copiar texto"
+                    className="flex min-h-[44px] items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.05] px-2 py-2 text-[11px] font-semibold text-slate-200 transition-all hover:bg-white/[0.1] active:scale-95"
+                  >
+                    <ClipboardCopy className="h-4 w-4" />
+                    Copiar
+                  </button>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => persist('borrador')}
+                    className="flex min-h-[52px] items-center justify-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-3 text-sm font-semibold text-amber-200 transition-all hover:bg-amber-500/20 active:scale-95"
+                  >
+                    💾 Guardar borrador
+                  </button>
+                  <button
+                    onClick={() => persist('enviado')}
+                    className="flex min-h-[52px] items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-500 to-sky-500 px-3 py-3 text-sm font-semibold text-white shadow-lg shadow-violet-500/25 transition-all hover:brightness-110 active:scale-95"
+                  >
+                    <Send className="h-4 w-4" />
+                    Enviar presupuesto
+                  </button>
+                </div>
               </div>
-              <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-3">
-                <button
-                  onClick={copyToWhatsApp}
-                  className="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.05] px-3 py-2.5 text-xs font-semibold text-slate-200 transition-all hover:bg-white/[0.1] active:scale-95"
-                >
-                  <ClipboardCopy className="h-4 w-4" />
-                  📋 Copiar texto
-                </button>
-                <button
-                  onClick={() => persist('borrador')}
-                  className="flex items-center justify-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2.5 text-xs font-semibold text-amber-200 transition-all hover:bg-amber-500/20 active:scale-95"
-                >
-                  💾 Guardar borrador
-                </button>
-                <button
-                  onClick={() => persist('enviado')}
-                  className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-500 to-sky-500 px-3 py-2.5 text-xs font-semibold text-white shadow-lg shadow-violet-500/25 transition-all hover:brightness-110 active:scale-95"
-                >
-                  <Send className="h-4 w-4" />
-                  📤 Enviar presupuesto
-                </button>
               </div>
             </motion.div>
           </div>

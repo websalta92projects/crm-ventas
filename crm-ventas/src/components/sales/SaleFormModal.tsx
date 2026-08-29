@@ -120,6 +120,17 @@ export default function SaleFormModal({
     )
   }
 
+  // Permite teclear una cantidad exacta en el input del carrito
+  const setQty = (productId: string, quantity: number) => {
+    const q = Math.floor(quantity)
+    if (!Number.isFinite(q)) return
+    setCart((prev) =>
+      q <= 0
+        ? prev.filter((l) => l.productId !== productId)
+        : prev.map((l) => (l.productId === productId ? { ...l, quantity: q } : l)),
+    )
+  }
+
   const removeLine = (productId: string) =>
     setCart((prev) => prev.filter((l) => l.productId !== productId))
 
@@ -299,7 +310,7 @@ export default function SaleFormModal({
 
               {/* Carrito */}
               {lines.length > 0 ? (
-                <div className="mb-4 space-y-2">
+                <div className="mb-4 max-h-[300px] space-y-2 overflow-y-auto pr-1">
                   <p className="text-xs font-medium text-slate-400">
                     Carrito · {totalItems} artículo{totalItems === 1 ? '' : 's'}
                   </p>
@@ -309,7 +320,7 @@ export default function SaleFormModal({
                       layout
                       initial={{ opacity: 0, y: 6 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="flex items-center gap-3 rounded-xl border border-white/5 bg-white/[0.03] px-3 py-2.5"
+                      className="flex items-center gap-2 rounded-xl border border-white/5 bg-white/[0.03] px-3 py-2 sm:gap-3"
                     >
                       <span className="text-lg">{l.product.emoji}</span>
                       <div className="min-w-0 flex-1">
@@ -318,32 +329,43 @@ export default function SaleFormModal({
                           {formatMoney(l.product.price)} / u.
                         </p>
                       </div>
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex shrink-0 items-center gap-1">
                         <button
                           type="button"
                           onClick={() => changeQty(l.product.id, -1)}
-                          className="rounded-lg bg-white/[0.06] p-1 text-slate-300 hover:bg-white/[0.12]"
+                          title="Disminuir cantidad"
+                          aria-label="Disminuir cantidad"
+                          className="flex h-[44px] w-[44px] items-center justify-center rounded-lg bg-white/[0.06] text-slate-300 transition-colors hover:bg-white/[0.12] active:scale-95"
                         >
-                          <Minus className="h-3.5 w-3.5" />
+                          <Minus className="h-4 w-4" />
                         </button>
-                        <span className="w-8 text-center text-sm font-semibold text-white">
-                          {l.qty}
-                        </span>
+                        <input
+                          type="number"
+                          min={1}
+                          value={l.qty}
+                          onChange={(e) => setQty(l.product.id, Number(e.target.value))}
+                          aria-label={`Cantidad de ${l.product.name}`}
+                          className="h-[44px] w-14 rounded-lg border border-white/10 bg-white/[0.06] text-center text-sm font-semibold text-white outline-none transition-colors focus:border-violet-400/60"
+                        />
                         <button
                           type="button"
                           onClick={() => changeQty(l.product.id, 1)}
-                          className="rounded-lg bg-white/[0.06] p-1 text-slate-300 hover:bg-white/[0.12]"
+                          title="Aumentar cantidad"
+                          aria-label="Aumentar cantidad"
+                          className="flex h-[44px] w-[44px] items-center justify-center rounded-lg bg-white/[0.06] text-slate-300 transition-colors hover:bg-white/[0.12] active:scale-95"
                         >
-                          <Plus className="h-3.5 w-3.5" />
+                          <Plus className="h-4 w-4" />
                         </button>
                       </div>
-                      <span className="w-20 text-right text-sm font-semibold text-white">
+                      <span className="hidden w-20 shrink-0 text-right text-sm font-semibold text-white sm:block">
                         {formatMoney(l.product.price * l.qty)}
                       </span>
                       <button
                         type="button"
                         onClick={() => removeLine(l.product.id)}
-                        className="rounded-lg p-1 text-slate-500 hover:bg-rose-500/15 hover:text-rose-400"
+                        title="Quitar del carrito"
+                        aria-label="Quitar del carrito"
+                        className="flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-rose-500/15 hover:text-rose-400"
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>

@@ -19,6 +19,7 @@ import StatusBadge from '../components/sales/StatusBadge'
 import ConfirmModal from '../components/products/ConfirmModal'
 import ActionButton from '../components/ui/ActionButton'
 import ActionsMenu, { type ActionItem } from '../components/ui/ActionsMenu'
+import Pagination from '../components/ui/Pagination'
 import { useMediaQuery } from '../hooks/useMediaQuery'
 import { useSalesStore } from '../store/salesStore'
 import { useConfigStore } from '../store/configStore'
@@ -49,6 +50,7 @@ export default function Sales({ initialBudgetId, onBudgetConsumed }: SalesProps)
   const [editing, setEditing] = useState<Sale | null>(null)
   const [deleting, setDeleting] = useState<Sale | null>(null)
   const [canceling, setCanceling] = useState<Sale | null>(null)
+  const [page, setPage] = useState(1)
 
   const isMobile = useMediaQuery('(max-width: 767px)')
 
@@ -83,6 +85,22 @@ export default function Sales({ initialBudgetId, onBudgetConsumed }: SalesProps)
       })
       .sort((a, b) => b.date.localeCompare(a.date))
   }, [sales, query, status, fromDate, toDate])
+
+  // Paginación: 7 ventas por página
+  const PAGE_SIZE = 7
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
+  const safePage = Math.min(page, totalPages)
+  const pageItems = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE)
+
+  // Al buscar o filtrar, vuelve a la primera página
+  useEffect(() => {
+    setPage(1)
+  }, [query, status, fromDate, toDate])
+
+  // Al cambiar de página, el scroll sube al principio de la lista
+  useEffect(() => {
+    document.getElementById('main-content')?.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [safePage])
 
   const totals = useMemo(() => {
     let total = 0
@@ -281,7 +299,7 @@ export default function Sales({ initialBudgetId, onBudgetConsumed }: SalesProps)
               </tr>
             </thead>
             <tbody>
-              {filtered.map((sale) => {
+              {pageItems.map((sale) => {
                 const customer = customerById.get(sale.customerId)
                 const units = saleUnits(sale)
                 const first = sale.items[0]
@@ -404,6 +422,8 @@ export default function Sales({ initialBudgetId, onBudgetConsumed }: SalesProps)
           </table>
         </div>
       </div>
+
+      <Pagination page={safePage} totalPages={totalPages} onPageChange={setPage} />
 
       {/* Formulario crear / editar (acepta un presupuesto inicial) */}
       <SaleFormModal

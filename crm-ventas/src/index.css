@@ -74,6 +74,7 @@ body {
      Los controles muy pequeños pueden optar por no estirarse con .no-min-h */
   button:not(.no-min-h) {
     min-height: 44px;
+    min-width: 44px;
   }
 
   /* Tablas: reducir el padding de celdas para aprovechar el ancho */

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import toast from 'react-hot-toast'
 import {
@@ -18,6 +18,7 @@ import StatusBadge from '../components/sales/StatusBadge'
 import ConfirmModal from '../components/products/ConfirmModal'
 import ActionButton from '../components/ui/ActionButton'
 import ActionsMenu, { type ActionItem } from '../components/ui/ActionsMenu'
+import Pagination from '../components/ui/Pagination'
 import { useMediaQuery } from '../hooks/useMediaQuery'
 import { useSalesStore } from '../store/salesStore'
 import { useConfigStore } from '../store/configStore'
@@ -42,6 +43,7 @@ export default function Budgets({ onCreateSale }: BudgetsProps) {
   const [editing, setEditing] = useState<Budget | null>(null)
   const [deleting, setDeleting] = useState<Budget | null>(null)
   const [rejecting, setRejecting] = useState<Budget | null>(null)
+  const [page, setPage] = useState(1)
 
   const isMobile = useMediaQuery('(max-width: 767px)')
 
@@ -54,6 +56,22 @@ export default function Budgets({ onCreateSale }: BudgetsProps) {
         .sort((a, b) => b.number - a.number),
     [budgets, statusFilter],
   )
+
+  // Paginación: 7 presupuestos por página
+  const PAGE_SIZE = 7
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
+  const safePage = Math.min(page, totalPages)
+  const pageItems = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE)
+
+  // Al filtrar por estado, vuelve a la primera página
+  useEffect(() => {
+    setPage(1)
+  }, [statusFilter])
+
+  // Al cambiar de página, el scroll sube al principio de la lista
+  useEffect(() => {
+    document.getElementById('main-content')?.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [safePage])
 
   const activeCount = useMemo(
     () => budgets.filter((b) => b.status === 'enviado' || b.status === 'aceptado').length,
@@ -194,7 +212,7 @@ export default function Budgets({ onCreateSale }: BudgetsProps) {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((b) => {
+              {pageItems.map((b) => {
                 // Acciones disponibles según el estado del presupuesto
                 const actions: ActionItem[] = []
                 actions.push({
@@ -343,6 +361,8 @@ export default function Budgets({ onCreateSale }: BudgetsProps) {
           </table>
         </div>
       </div>
+
+      <Pagination page={safePage} totalPages={totalPages} onPageChange={setPage} />
 
       <BudgetFormModal open={formOpen} budget={editing} onClose={() => setFormOpen(false)} />
 

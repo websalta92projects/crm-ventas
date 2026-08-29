@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import toast from 'react-hot-toast'
 import { Plus, Search, UsersRound } from 'lucide-react'
@@ -6,6 +6,7 @@ import CustomerCard from '../components/customers/CustomerCard'
 import CustomerFormModal from '../components/customers/CustomerFormModal'
 import CustomerHistoryModal from '../components/customers/CustomerHistoryModal'
 import ConfirmModal from '../components/products/ConfirmModal'
+import Pagination from '../components/ui/Pagination'
 import { useSalesStore } from '../store/salesStore'
 import { saleTotal } from '../utils/sale'
 import type { Customer } from '../types'
@@ -20,6 +21,12 @@ export default function Customers() {
   const [editing, setEditing] = useState<Customer | null>(null)
   const [deleting, setDeleting] = useState<Customer | null>(null)
   const [historyCustomer, setHistoryCustomer] = useState<Customer | null>(null)
+  const [page, setPage] = useState(1)
+
+  // Al buscar o filtrar, vuelve a la primera página
+  useEffect(() => {
+    setPage(1)
+  }, [query])
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -31,6 +38,12 @@ export default function Customers() {
         c.phone.toLowerCase().includes(q),
     )
   }, [customers, query])
+
+  // Paginación: 6 clientes por página
+  const PAGE_SIZE = 6
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
+  const safePage = Math.min(page, totalPages)
+  const pageItems = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE)
 
   // Resumen de compras por cliente (cantidad y total gastado)
   const purchasesByCustomer = useMemo(() => {
@@ -98,7 +111,7 @@ export default function Customers() {
       {filtered.length > 0 ? (
         <motion.div layout className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
           <AnimatePresence mode="popLayout">
-            {filtered.map((c) => (
+            {pageItems.map((c) => (
               <CustomerCard
                 key={c.id}
                 customer={c}
@@ -128,6 +141,9 @@ export default function Customers() {
           )}
         </div>
       )}
+
+      {/* Paginación */}
+      <Pagination page={safePage} totalPages={totalPages} onPageChange={setPage} />
 
       {/* Formulario crear / editar */}
       <CustomerFormModal open={formOpen} customer={editing} onClose={() => setFormOpen(false)} />

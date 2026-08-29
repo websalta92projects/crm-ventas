@@ -27,7 +27,7 @@ export default function ActionButton({
       aria-label={label}
       disabled={disabled}
       onClick={onClick}
-      className={`glass glass-hover flex min-h-[44px] items-center justify-center gap-1.5 rounded-xl px-3 text-xs font-medium transition-all active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 ${
+      className={`glass glass-hover flex min-h-[44px] min-w-[44px] items-center justify-center gap-1.5 rounded-xl px-3 text-xs font-medium transition-all active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 ${
         disabled
           ? 'text-slate-500'
           : danger

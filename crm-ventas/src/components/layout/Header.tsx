@@ -19,7 +19,9 @@ export default function Header({
     <header className="flex items-center gap-4 px-4 py-4 md:px-8">
       <button
         onClick={onMenuClick}
-        className="glass glass-hover flex h-10 w-10 items-center justify-center lg:hidden"
+        title="Abrir menú"
+        aria-label="Abrir menú"
+        className="glass glass-hover flex h-11 w-11 min-h-[44px] min-w-[44px] items-center justify-center lg:hidden"
       >
         <Menu className="h-5 w-5 text-slate-300" />
       </button>
@@ -38,7 +40,11 @@ export default function Header({
           />
         </div>
 
-        <button className="glass glass-hover flex h-10 w-10 items-center justify-center">
+        <button
+          title="Notificaciones"
+          aria-label="Notificaciones"
+          className="glass glass-hover flex h-11 w-11 min-h-[44px] min-w-[44px] items-center justify-center"
+        >
           <Bell className="h-4 w-4 text-slate-300" />
         </button>
 

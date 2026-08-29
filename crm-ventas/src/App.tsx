@@ -77,7 +77,7 @@ export default function App() {
           onNewSale={() => setSaleModalOpen(true)}
           showNewSale={view === 'dashboard'}
         />
-        <main className="flex-1 overflow-y-auto px-4 pb-10 md:px-8">
+        <main id="main-content" className="flex-1 overflow-y-auto px-4 pb-10 md:px-8">
           {view === 'dashboard' && <Dashboard />}
           {view === 'productos' && <Products />}
           {view === 'ventas' && (
