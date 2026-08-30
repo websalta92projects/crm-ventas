@@ -43,7 +43,7 @@ export function budgetTotals(
 }
 
 // Pie de página por defecto cuando no hay uno configurado en Configuración
-export const DEFAULT_FOOTER = 'Generado con ElectroCRM'
+export const DEFAULT_FOOTER = 'Generado con InvoiceDomatic'
 
 // Formato de dinero en texto plano: "$ 1.499,00" (símbolo argentino)
 function plainMoney(value: number): string {

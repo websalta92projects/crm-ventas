@@ -1,4 +1,4 @@
-# ⚡ ElectroCRM — Manual de Supervivencia
+# ⚡ InvoiceDomatic — Manual de Supervivencia
 
 CRM de ventas para vendedores de **productos electrónicos**.
 
@@ -213,7 +213,7 @@ crm-ventas/
 - **Exportar JSON**: descarga todos los datos (productos, ventas, clientes).
 - **Importar JSON**: restaura un respaldo previo (botón en el panel "Exportación y respaldo").
 
-> Los archivos se generan con el prefijo `electrocrm-*` y la fecha. El PDF usa acentos correctamente (codificación WinAnsi).
+> Los archivos se generan con el prefijo `invoicedomatic-*` y la fecha. El PDF usa acentos correctamente (codificación WinAnsi).
 
 ---
 

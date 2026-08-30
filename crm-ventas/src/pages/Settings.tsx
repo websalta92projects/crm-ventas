@@ -205,7 +205,7 @@ export default function Settings() {
               <input
                 value={config.subtitle ?? ''}
                 onChange={(e) => updateConfig({ subtitle: e.target.value })}
-                placeholder="Ej. Ventas inteligentes"
+                placeholder="Ej. Facturación Inteligente"
                 className={inputClass}
               />
               <p className="mt-1 text-[11px] text-muted">
@@ -295,7 +295,7 @@ export default function Settings() {
             />
             <p className="mt-1 text-[11px] text-muted">
               Aparece al final de presupuestos y recibos. Si lo dejas vacío, se usará «Generado con
-              ElectroCRM».
+              InvoiceDomatic».
             </p>
           </Field>
         </div>

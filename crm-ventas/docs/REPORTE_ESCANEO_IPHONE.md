@@ -1,7 +1,7 @@
 # Reporte: Escaneo de código de barras con BarcodeDetector API (iPhone/iOS)
 
 **Fecha:** 2026-08-29
-**Proyecto:** ElectroCRM
+**Proyecto:** InvoiceDomatic
 **Archivo principal:** `src/components/ui/BarcodeScannerModal.tsx` (usado por presupuestos y ventas)
 
 ---

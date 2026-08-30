@@ -48,12 +48,12 @@ function SidebarContent({
           </div>
         ) : (
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-sky-500 text-sm font-bold text-white shadow-lg shadow-violet-500/30">
-            {(config.name.trim()[0] || 'E').toUpperCase()}
+            {(config.name.trim()[0] || 'I').toUpperCase()}
           </div>
         )}
         <div className="min-w-0 flex-1">
           <h1 className="truncate text-lg font-bold leading-tight text-white">
-            {config.name || 'ElectroCRM'}
+            {config.name || 'InvoiceDomatic'}
           </h1>
           {config.subtitle?.trim() && (
             <p className="truncate text-[11px] text-secondary">{config.subtitle}</p>

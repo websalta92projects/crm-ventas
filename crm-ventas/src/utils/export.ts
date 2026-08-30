@@ -48,7 +48,7 @@ export function exportProductsCSV(products: Product[]) {
     p.cost,
     p.stock,
   ])
-  downloadFile(`electrocrm-productos-${today()}.csv`, csv([header, ...rows]), 'text/csv;charset=utf-8')
+  downloadFile(`invoicedomatic-productos-${today()}.csv`, csv([header, ...rows]), 'text/csv;charset=utf-8')
 }
 
 export function exportSalesCSV(sales: Sale[], products: Product[], customers: Customer[]) {
@@ -70,13 +70,13 @@ export function exportSalesCSV(sales: Sale[], products: Product[], customers: Cu
       saleTotal(s),
       saleProfit(s),
     ])
-  downloadFile(`electrocrm-ventas-${today()}.csv`, csv([header, ...rows]), 'text/csv;charset=utf-8')
+  downloadFile(`invoicedomatic-ventas-${today()}.csv`, csv([header, ...rows]), 'text/csv;charset=utf-8')
 }
 
 export function exportCustomersCSV(customers: Customer[]) {
   const header = ['id', 'nombre', 'telefono', 'email', 'direccion', 'creado']
   const rows = customers.map((c) => [c.id, c.name, c.phone, c.email, c.address, c.createdAt.slice(0, 10)])
-  downloadFile(`electrocrm-clientes-${today()}.csv`, csv([header, ...rows]), 'text/csv;charset=utf-8')
+  downloadFile(`invoicedomatic-clientes-${today()}.csv`, csv([header, ...rows]), 'text/csv;charset=utf-8')
 }
 
 export function exportBudgetsCSV(budgets: Budget[], customers: Customer[]) {
@@ -93,7 +93,7 @@ export function exportBudgetsCSV(budgets: Budget[], customers: Customer[]) {
     b.status,
     formatDateOnly(b.createdAt),
   ])
-  downloadFile(`electrocrm-presupuestos-${today()}.csv`, csv([header, ...rows]), 'text/csv;charset=utf-8')
+  downloadFile(`invoicedomatic-presupuestos-${today()}.csv`, csv([header, ...rows]), 'text/csv;charset=utf-8')
 }
 
 // ===== Respaldo JSON =====
@@ -111,7 +111,7 @@ export function exportBackupJSON(data: {
     ...data,
   }
   downloadFile(
-    `electrocrm-respaldo-${today()}.json`,
+    `invoicedomatic-respaldo-${today()}.json`,
     JSON.stringify(payload, null, 2),
     'application/json',
   )
@@ -154,7 +154,7 @@ export function parseBackupJSON(text: string): {
     !Array.isArray(data.sales) ||
     !Array.isArray(data.customers)
   ) {
-    throw new Error('El archivo no es un respaldo válido de ElectroCRM')
+    throw new Error('El archivo no es un respaldo válido de InvoiceDomatic')
   }
   return {
     products: data.products,
@@ -197,7 +197,7 @@ export async function exportReportPDF({ products, sales, customers, from, to }: 
   doc.setTextColor(255, 255, 255)
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(17)
-  doc.text('ElectroCRM — Resumen Ejecutivo', 14, 12)
+  doc.text('InvoiceDomatic — Resumen Ejecutivo', 14, 12)
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(9)
   doc.text(`Generado: ${new Date().toLocaleString('es')}`, 14, 19)
@@ -272,9 +272,9 @@ export async function exportReportPDF({ products, sales, customers, from, to }: 
     doc.setPage(i)
     doc.setFontSize(8)
     doc.setTextColor(...gray)
-    doc.text(`ElectroCRM · página ${i} de ${pageCount}`, 14, 290)
+    doc.text(`InvoiceDomatic · página ${i} de ${pageCount}`, 14, 290)
   }
 
-  doc.save(`electrocrm-reporte-${today()}.pdf`)
+  doc.save(`invoicedomatic-reporte-${today()}.pdf`)
 }
 

@@ -5,13 +5,13 @@ import type { CompanyConfig } from '../types'
 // Configuración de la empresa (persistida en localStorage con la clave 'company-config')
 export const DEFAULT_CONFIG: CompanyConfig = {
   logo: '',
-  name: 'ElectroCRM',
-  subtitle: 'Ventas inteligentes',
+  name: 'InvoiceDomatic',
+  subtitle: 'Facturación Inteligente',
   address: 'Av. Principal 123, Buenos Aires',
   phone: '5491122334455',
   email: 'ventas@electrotech.com',
   color: '#8b5cf6',
-  footer: 'Generado con ElectroCRM',
+  footer: 'Generado con InvoiceDomatic',
   budgetCounter: 1001,
   receiptCounter: 1458,
   taxRate: 21,
