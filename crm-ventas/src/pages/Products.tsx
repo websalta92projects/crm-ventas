@@ -4,6 +4,7 @@ import toast from 'react-hot-toast'
 import { Filter, PackageSearch, Plus, RotateCcw, Search } from 'lucide-react'
 import ProductCard from '../components/products/ProductCard'
 import ProductFormModal from '../components/products/ProductFormModal'
+import ImportProductsModal from '../components/products/ImportProductsModal'
 import ConfirmModal from '../components/products/ConfirmModal'
 import Pagination from '../components/ui/Pagination'
 import BarcodeScannerModal from '../components/ui/BarcodeScannerModal'
@@ -19,6 +20,7 @@ export default function Products({ refreshKey = 0 }: { refreshKey?: number }) {
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState('all')
   const [formOpen, setFormOpen] = useState(false)
+  const [importOpen, setImportOpen] = useState(false)
   const [editing, setEditing] = useState<Product | null>(null)
   const [deleting, setDeleting] = useState<Product | null>(null)
   const [resetOpen, setResetOpen] = useState(false)
@@ -215,6 +217,16 @@ export default function Products({ refreshKey = 0 }: { refreshKey?: number }) {
         </button>
 
         <button
+          type="button"
+          onClick={() => setImportOpen(true)}
+          title="Importar productos desde archivo CSV"
+          aria-label="Importar productos desde CSV"
+          className="flex shrink-0 items-center gap-1.5 rounded-xl border border-app bg-card px-3 py-2 text-xs font-semibold text-primary transition-all hover:bg-card active:scale-95"
+        >
+          📥 Importar productos
+        </button>
+
+        <button
           onClick={openCreate}
           className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-500 to-sky-500 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-violet-500/25 transition-all hover:brightness-110 active:scale-95 sm:w-auto"
         >
@@ -282,6 +294,9 @@ export default function Products({ refreshKey = 0 }: { refreshKey?: number }) {
         initialBarcode={preloadBarcode}
         onClose={() => setFormOpen(false)}
       />
+
+      {/* Importación desde CSV */}
+      <ImportProductsModal open={importOpen} onClose={() => setImportOpen(false)} />
 
       {/* Escáner de código de barras (búsqueda rápida: no agrega al carrito) */}
       <BarcodeScannerModal
