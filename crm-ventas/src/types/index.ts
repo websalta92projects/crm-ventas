@@ -6,7 +6,11 @@ export interface Product {
   price: number
   cost: number
   stock: number
-  emoji: string
+  // Marca (opcional): para negocios que venden productos de marca
+  brand?: string
+  // Icono/emoji heredado (opcional): se conserva por compatibilidad con
+  // ventas/presupuestos y PDFs; los productos nuevos ya no se guardan con icono
+  emoji?: string
   // Código de barras (opcional): se usa para escanear y agregar al carrito
   barcode?: string
 }

@@ -10,6 +10,7 @@ export const initialProducts: Product[] = [
     price: 1499,
     cost: 1050,
     stock: 12,
+    brand: 'TechPro',
     emoji: '💻',
     barcode: '7501234560012',
   },
@@ -21,6 +22,7 @@ export const initialProducts: Product[] = [
     price: 999,
     cost: 700,
     stock: 25,
+    brand: 'MobileX',
     emoji: '📱',
     barcode: '7501234560029',
   },
@@ -305,7 +307,7 @@ export function generateSeedSales(customers: Customer[] = initialCustomers): Sal
           {
             productId: product.id,
             name: product.name,
-            emoji: product.emoji,
+            emoji: product.emoji || '',
             quantity,
             unitPrice: product.price,
             unitCost: product.cost,
@@ -315,7 +317,7 @@ export function generateSeedSales(customers: Customer[] = initialCustomers): Sal
                 {
                   productId: secondProduct.id,
                   name: secondProduct.name,
-                  emoji: secondProduct.emoji,
+                  emoji: secondProduct.emoji || '',
                   quantity: 1,
                   unitPrice: secondProduct.price,
                   unitCost: secondProduct.cost,

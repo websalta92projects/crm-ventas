@@ -349,7 +349,7 @@ export default function BudgetFormModal({ open, budget, onClose }: BudgetFormMod
     lines.map((l) => ({
       productId: l.product.id,
       name: l.product.name,
-      emoji: l.product.emoji,
+      emoji: l.product.emoji || '',
       quantity: l.qty,
       unitPrice: l.product.price,
     }))

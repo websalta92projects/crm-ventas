@@ -37,16 +37,16 @@ const today = () => new Date().toISOString().slice(0, 10)
 // ===== Exportación CSV =====
 
 export function exportProductsCSV(products: Product[]) {
-  const header = ['id', 'nombre', 'descripcion', 'categoria', 'precio_venta', 'costo', 'stock', 'icono']
+  const header = ['id', 'nombre', 'marca', 'descripcion', 'categoria', 'precio_venta', 'costo', 'stock']
   const rows = products.map((p) => [
     p.id,
     p.name,
+    p.brand ?? '',
     p.description,
     p.category,
     p.price,
     p.cost,
     p.stock,
-    p.emoji,
   ])
   downloadFile(`electrocrm-productos-${today()}.csv`, csv([header, ...rows]), 'text/csv;charset=utf-8')
 }

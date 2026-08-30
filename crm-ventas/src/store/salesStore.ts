@@ -128,7 +128,7 @@ export const useSalesStore = create<SalesStore>()(
               return {
                 productId: p.id,
                 name: p.name,
-                emoji: p.emoji,
+                emoji: p.emoji || '',
                 quantity: it.quantity,
                 unitPrice: p.price,
                 unitCost: p.cost,
@@ -334,7 +334,7 @@ export const useSalesStore = create<SalesStore>()(
               return {
                 productId: p.id,
                 name: p.name,
-                emoji: p.emoji,
+                emoji: p.emoji || '',
                 quantity: it.quantity,
                 unitPrice: p.price,
               }

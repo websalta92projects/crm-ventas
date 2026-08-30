@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { Pencil, Trash2 } from 'lucide-react'
+import { Package, Pencil, Trash2 } from 'lucide-react'
 import type { Product } from '../../types'
 import { formatMoney } from '../../utils/format'
 
@@ -27,14 +27,19 @@ export default function ProductCard({ product, salesCount, onEdit, onDelete }: P
       className="glass glass-hover flex flex-col p-5"
     >
       <div className="flex items-start gap-3">
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-app bg-gradient-to-br from-violet-500/20 to-sky-500/10 text-2xl">
-          {product.emoji || '📦'}
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-app bg-gradient-to-br from-violet-500/20 to-sky-500/10">
+          <Package className="h-6 w-6 text-violet-300" />
         </div>
         <div className="min-w-0 flex-1">
           <h3 className="truncate font-semibold text-white" title={product.name}>
             {product.name}
           </h3>
           <div className="mt-1 flex flex-wrap items-center gap-1.5">
+            {product.brand && (
+              <span className="rounded-full bg-sky-500/10 px-2 py-0.5 text-[10px] font-medium text-sky-300">
+                {product.brand}
+              </span>
+            )}
             <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-medium text-secondary">
               {product.category}
             </span>

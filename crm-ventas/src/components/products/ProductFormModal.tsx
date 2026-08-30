@@ -8,8 +8,6 @@ import type { Product } from '../../types'
 import { formatMoney } from '../../utils/format'
 import { mergeCategories, registerCategory } from '../../utils/categories'
 
-const EMOJIS = ['💻', '📱', '📲', '🎧', '⌚', '📺', '📷', '🎮', '⌨️', '🖱️', '🔊', '🔌', '🖨️', '📡']
-
 interface ProductFormModalProps {
   open: boolean
   product: Product | null
@@ -42,7 +40,7 @@ export default function ProductFormModal({
   const [price, setPrice] = useState('')
   const [cost, setCost] = useState('')
   const [stock, setStock] = useState('')
-  const [emoji, setEmoji] = useState('📦')
+  const [brand, setBrand] = useState('')
 
   const [categories, setCategories] = useState<string[]>([])
   const [catOpen, setCatOpen] = useState(false)
@@ -66,7 +64,7 @@ export default function ProductFormModal({
     setPrice(product ? String(product.price) : '')
     setCost(product ? String(product.cost) : '')
     setStock(product ? String(product.stock) : '')
-    setEmoji(product?.emoji || '📦')
+    setBrand(product?.brand ?? '')
     // Categorías: LocalStorage + las que ya usan los productos
     setCategories(mergeCategories(products.map((p) => p.category).filter(Boolean)))
     setCatOpen(false)
@@ -138,7 +136,8 @@ export default function ProductFormModal({
         price: priceNum,
         cost: costNum,
         stock: stockNum,
-        emoji: emoji || '📦',
+        brand: brand.trim() || undefined,
+        ...(product?.emoji ? { emoji: product.emoji } : {}),
         ...(barcodeTrim ? { barcode: barcodeTrim } : {}),
       })
     } catch (error) {
@@ -156,7 +155,7 @@ export default function ProductFormModal({
           price: priceNum,
           cost: costNum,
           stock: stockNum,
-          emoji: emoji || '📦',
+          brand: brand.trim() || undefined,
           ...(barcodeTrim ? { barcode: barcodeTrim } : { barcode: undefined }),
         }
       : useSalesStore.getState().products.find((p) => p.name === name.trim())
@@ -249,6 +248,18 @@ export default function ProductFormModal({
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Ej. Audífonos Pro"
+                    className="w-full rounded-xl border border-app bg-card px-3 py-2.5 text-sm text-white placeholder:text-muted outline-none transition-colors focus:border-violet-400/60"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-1.5 block text-xs font-medium text-secondary">
+                    Marca <span className="font-normal text-muted">(opcional)</span>
+                  </label>
+                  <input
+                    value={brand}
+                    onChange={(e) => setBrand(e.target.value)}
+                    placeholder="Ej. Samsung, Sony, LG…"
                     className="w-full rounded-xl border border-app bg-card px-3 py-2.5 text-sm text-white placeholder:text-muted outline-none transition-colors focus:border-violet-400/60"
                   />
                 </div>
@@ -444,26 +455,6 @@ export default function ProductFormModal({
                       placeholder="0"
                       className="w-full rounded-xl border border-app bg-card px-3 py-2.5 text-sm text-white placeholder:text-muted outline-none transition-colors focus:border-violet-400/60"
                     />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="mb-1.5 block text-xs font-medium text-secondary">Icono</label>
-                  <div className="flex flex-wrap gap-1.5">
-                    {EMOJIS.map((e) => (
-                      <button
-                        type="button"
-                        key={e}
-                        onClick={() => setEmoji(e)}
-                        className={`no-min-h flex h-9 w-9 items-center justify-center rounded-lg border text-lg transition-all ${
-                          emoji === e
-                            ? 'border-violet-400/60 bg-violet-500/20'
-                            : 'border-app bg-card hover:bg-card'
-                        }`}
-                      >
-                        {e}
-                      </button>
-                    ))}
                   </div>
                 </div>
 
