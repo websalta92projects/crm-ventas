@@ -1,7 +1,7 @@
-import { useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import toast from 'react-hot-toast'
-import { CheckCircle2, FileUp, UploadCloud, X } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, FileUp, UploadCloud, X } from 'lucide-react'
 import { useSalesStore } from '../../store/salesStore'
 import { parseProductsCSV, type CsvImportResult } from '../../utils/csvImport'
 import { registerCategory } from '../../utils/categories'
@@ -11,7 +11,13 @@ interface ImportProductsModalProps {
   onClose: () => void
 }
 
+interface ImportOutcome {
+  imported: number
+  duplicated: number
+}
+
 export default function ImportProductsModal({ open, onClose }: ImportProductsModalProps) {
+  const products = useSalesStore((s) => s.products)
   const saveProduct = useSalesStore((s) => s.saveProduct)
   const fileRef = useRef<HTMLInputElement>(null)
 
@@ -19,12 +25,44 @@ export default function ImportProductsModal({ open, onClose }: ImportProductsMod
   const [fileName, setFileName] = useState('')
   const [result, setResult] = useState<CsvImportResult | null>(null)
   const [done, setDone] = useState(false)
+  const [outcome, setOutcome] = useState<ImportOutcome | null>(null)
+
+  // Detecta cuántos productos del CSV ya existen en el catálogo
+  // (por código de barras si lo tienen; si no, por nombre)
+  const duplicateCount = useMemo(() => {
+    if (!result) return 0
+    const byBarcode = new Map(
+      products
+        .filter((p) => p.barcode && p.barcode.trim())
+        .map((p) => [p.barcode!.trim(), p.name]),
+    )
+    const byName = new Map(products.map((p) => [p.name.trim().toLowerCase(), p.name]))
+    const seen = new Set<string>()
+    let count = 0
+    for (const c of result.products) {
+      const kb = c.barcode?.trim()
+      const kn = c.name.trim().toLowerCase()
+      const dup = kb
+        ? byBarcode.has(kb) || seen.has(`b:${kb}`)
+        : byName.has(kn) || seen.has(`n:${kn}`)
+      if (dup) {
+        count++
+        continue
+      }
+      if (kb) seen.add(`b:${kb}`)
+      seen.add(`n:${kn}`)
+    }
+    return count
+  }, [result, products])
+
+  const importableCount = (result?.products.length ?? 0) - duplicateCount
 
   const reset = () => {
     setParsing(false)
     setFileName('')
     setResult(null)
     setDone(false)
+    setOutcome(null)
     if (fileRef.current) fileRef.current.value = ''
   }
 
@@ -37,6 +75,7 @@ export default function ImportProductsModal({ open, onClose }: ImportProductsMod
     setParsing(true)
     setFileName(file.name)
     setDone(false)
+    setOutcome(null)
     setResult(null)
     try {
       const res = await parseProductsCSV(file)
@@ -54,14 +93,55 @@ export default function ImportProductsModal({ open, onClose }: ImportProductsMod
   const handleImport = () => {
     if (!result || result.products.length === 0) return
     try {
-      for (const p of result.products) saveProduct(p)
-      // Registra las categorías nuevas en LocalStorage (consistente con el formulario)
-      for (const cat of new Set(result.products.map((p) => p.category).filter(Boolean))) {
-        registerCategory(cat)
-      }
-      toast.success(
-        `✅ ${result.products.length} productos importados correctamente. ${result.skipped} omitidos por datos incompletos.`,
+      const byBarcode = new Map(
+        products
+          .filter((p) => p.barcode && p.barcode.trim())
+          .map((p) => [p.barcode!.trim(), p.name]),
       )
+      const byName = new Map(products.map((p) => [p.name.trim().toLowerCase(), p.name]))
+      const seen = new Set<string>()
+
+      let imported = 0
+      let duplicated = 0
+      const importedCategories = new Set<string>()
+
+      for (const candidate of result.products) {
+        const kb = candidate.barcode?.trim()
+        const kn = candidate.name.trim().toLowerCase()
+        // Duplicado: por código de barras si lo tiene; si no, por nombre
+        const isDuplicate = kb
+          ? byBarcode.has(kb) || seen.has(`b:${kb}`)
+          : byName.has(kn) || seen.has(`n:${kn}`)
+        if (isDuplicate) {
+          duplicated++
+          toast(`⚠️ Producto «${candidate.name}» ya existe. Saltado.`)
+          continue
+        }
+        saveProduct(candidate)
+        imported++
+        if (kb) {
+          byBarcode.set(kb, candidate.name)
+          seen.add(`b:${kb}`)
+        }
+        byName.set(kn, candidate.name)
+        seen.add(`n:${kn}`)
+        if (candidate.category) importedCategories.add(candidate.category)
+      }
+
+      // Registra las categorías nuevas en LocalStorage (consistente con el formulario)
+      for (const cat of importedCategories) registerCategory(cat)
+
+      const parts = [`✅ ${imported} producto${imported === 1 ? '' : 's'} importado${imported === 1 ? '' : 's'} correctamente.`]
+      if (duplicated > 0) {
+        parts.push(
+          `⚠️ ${duplicated} producto${duplicated === 1 ? '' : 's'} saltado${duplicated === 1 ? '' : 's'} por estar duplicado${duplicated === 1 ? '' : 's'}.`,
+        )
+      }
+      if (result.skipped > 0) {
+        parts.push(`${result.skipped} omitido${result.skipped === 1 ? '' : 's'} por datos incompletos.`)
+      }
+      toast(parts.join(' '))
+      setOutcome({ imported, duplicated })
       setDone(true)
     } catch (error) {
       console.error('[electro-crm] Error al importar productos:', error)
@@ -165,6 +245,13 @@ export default function ImportProductsModal({ open, onClose }: ImportProductsMod
                     </span>
                   </div>
                   <div className="flex items-center justify-between rounded-xl border border-app bg-card p-3">
+                    <span className="text-sm text-secondary">Duplicados en el catálogo</span>
+                    <span className="flex items-center gap-1.5 text-lg font-bold text-amber-300">
+                      {duplicateCount > 0 && <AlertTriangle className="h-4 w-4" />}
+                      {duplicateCount}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between rounded-xl border border-app bg-card p-3">
                     <span className="text-sm text-secondary">Omitidos (datos incompletos)</span>
                     <span className="text-lg font-bold text-amber-300">{result.skipped}</span>
                   </div>
@@ -192,12 +279,12 @@ export default function ImportProductsModal({ open, onClose }: ImportProductsMod
                     <button
                       type="button"
                       onClick={handleImport}
-                      disabled={result.products.length === 0}
+                      disabled={importableCount === 0}
                       className="flex min-h-[44px] flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 px-3 text-sm font-semibold text-white shadow-lg shadow-emerald-500/25 transition-all hover:brightness-110 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <UploadCloud className="h-4 w-4" />
-                      Importar {result.products.length} producto
-                      {result.products.length === 1 ? '' : 's'}
+                      Importar {importableCount} producto
+                      {importableCount === 1 ? '' : 's'}
                     </button>
                   </div>
                 </div>
@@ -208,12 +295,22 @@ export default function ImportProductsModal({ open, onClose }: ImportProductsMod
                   <div className="flex flex-col items-center gap-3 rounded-xl border border-emerald-500/25 bg-emerald-500/10 p-6 text-center">
                     <CheckCircle2 className="h-10 w-10 text-emerald-400" />
                     <p className="text-sm font-semibold text-white">
-                      ✅ {result.products.length} productos importados correctamente.
+                      ✅ {outcome?.imported ?? 0} producto{(outcome?.imported ?? 0) === 1 ? '' : 's'} importado
+                      {(outcome?.imported ?? 0) === 1 ? '' : 's'} correctamente.
                     </p>
-                    <p className="text-xs text-secondary">
-                      {result.skipped} producto{result.skipped === 1 ? '' : 's'} omitido
-                      {result.skipped === 1 ? '' : 's'} por datos incompletos.
-                    </p>
+                    {(outcome?.duplicated ?? 0) > 0 && (
+                      <p className="text-xs font-medium text-amber-300">
+                        ⚠️ {outcome?.duplicated} producto{outcome?.duplicated === 1 ? '' : 's'} saltado
+                        {outcome?.duplicated === 1 ? '' : 's'} por estar duplicado
+                        {outcome?.duplicated === 1 ? '' : 's'}.
+                      </p>
+                    )}
+                    {result.skipped > 0 && (
+                      <p className="text-xs text-secondary">
+                        {result.skipped} producto{result.skipped === 1 ? '' : 's'} omitido
+                        {result.skipped === 1 ? '' : 's'} por datos incompletos.
+                      </p>
+                    )}
                   </div>
                   <p className="text-center text-[11px] text-muted">
                     Podés editar cada producto después para completar precios de costo o detalles.
