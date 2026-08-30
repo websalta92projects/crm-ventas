@@ -34,6 +34,11 @@ export interface Sale {
   // Configuración de IVA heredada del presupuesto (o por defecto) para el recibo
   includeTax?: boolean
   taxRate?: number
+  // Ajustes del carrito: descuento, envío y notas internas (solo vendedor)
+  discountType?: 'percentage' | 'fixed'
+  discountValue?: number
+  shippingCost?: number
+  internalNotes?: string
 }
 
 // Estados de un presupuesto
@@ -61,6 +66,11 @@ export interface Budget {
   // IVA configurable POR presupuesto (no global)
   includeTax: boolean
   taxRate: number
+  // Ajustes del carrito: descuento, envío y notas internas (solo vendedor)
+  discountType?: 'percentage' | 'fixed'
+  discountValue?: number
+  shippingCost?: number
+  internalNotes?: string
   // true cuando el presupuesto ya generó una venta (evita duplicados)
   hasSale?: boolean
 }

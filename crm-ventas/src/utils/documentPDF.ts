@@ -1,6 +1,6 @@
 import type { Budget, CompanyConfig, Customer, Sale } from '../types'
 import { formatMoney, formatDateOnly } from './format'
-import { TAX_RATE } from './budget'
+import { computeDiscount, TAX_RATE } from './budget'
 
 // ===== PDF profesional para presupuestos y recibos (jsPDF + autotable) =====
 
@@ -72,6 +72,9 @@ export interface DocData {
   // IVA configurable: si es false, NO se dibuja la línea de IVA en el PDF
   includeTax: boolean
   taxRate: number
+  // Descuento y envío (solo se dibujan si > 0)
+  discount?: number
+  shipping?: number
 }
 
 // Construye el documento PDF (jsPDF) listo para guardar o compartir
@@ -207,14 +210,10 @@ export async function buildDocumentDoc(data: DocData): Promise<import('jspdf').j
   const boxX = 108
   const boxW = right - boxX
   const totalsTop = finalY + 6
-  // Si no se incluye IVA, el bloque de totales es más compacto (sin la fila de IVA)
+  // Rows condicionales: Subtotal siempre; Descuento/IVA/Envío solo si corresponden
   const showTax = data.includeTax && data.tax > 0
-  const totalsBottom = totalsTop + (showTax ? 27 : 21)
-
-  // Marco del bloque de totales
-  doc.setDrawColor(...border)
-  doc.setLineWidth(0.3)
-  doc.roundedRect(boxX, totalsTop, boxW, totalsBottom - totalsTop, 3, 3, 'S')
+  const showDiscount = Boolean(data.discount && data.discount > 0)
+  const showShipping = Boolean(data.shipping && data.shipping > 0)
 
   let ty = totalsTop + 7
   doc.setFont('helvetica', 'normal')
@@ -222,15 +221,32 @@ export async function buildDocumentDoc(data: DocData): Promise<import('jspdf').j
   doc.setTextColor(...dark)
   doc.text('Subtotal:', boxX + 4, ty)
   doc.text(formatMoney(data.subtotal), right - 4, ty, { align: 'right' })
+  if (showDiscount) {
+    ty += 6
+    doc.text('Descuento:', boxX + 4, ty)
+    doc.text(`-${formatMoney(data.discount as number)}`, right - 4, ty, { align: 'right' })
+  }
   if (showTax) {
     ty += 6
     doc.text(`IVA (${Math.round(data.taxRate)}%):`, boxX + 4, ty)
     doc.text(formatMoney(data.tax), right - 4, ty, { align: 'right' })
   }
+  if (showShipping) {
+    ty += 6
+    doc.text('Envío:', boxX + 4, ty)
+    doc.text(formatMoney(data.shipping as number), right - 4, ty, { align: 'right' })
+  }
 
   // Fila del Total: fondo verde claro y texto verde oscuro
-  const totalTop = totalsTop + (showTax ? 16 : 10)
+  const totalTop = ty + 2
   const totalRowH = 10
+  const totalsBottom = totalTop + totalRowH + 2
+
+  // Marco del bloque de totales
+  doc.setDrawColor(...border)
+  doc.setLineWidth(0.3)
+  doc.roundedRect(boxX, totalsTop, boxW, totalsBottom - totalsTop, 3, 3, 'S')
+
   doc.setFillColor(...totalBg)
   doc.roundedRect(boxX, totalTop, boxW, totalRowH, 3, 3, 'F')
   doc.setFont('helvetica', 'bold')
@@ -294,6 +310,8 @@ export async function generateBudgetPDF(
     total: budget.total,
     includeTax: budget.includeTax ?? true,
     taxRate: budget.taxRate ?? Math.round(TAX_RATE * 100),
+    discount: computeDiscount(budget.subtotal, budget.discountType, budget.discountValue),
+    shipping: budget.shippingCost && budget.shippingCost > 0 ? budget.shippingCost : undefined,
     config,
   })
 }
@@ -308,6 +326,8 @@ export async function generateReceiptPDF(
   const taxRate = sale.taxRate ?? config.taxRate ?? Math.round(TAX_RATE * 100)
   const subtotal = sale.items.reduce((acc, i) => acc + i.unitPrice * i.quantity, 0)
   const tax = includeTax ? subtotal * (taxRate / 100) : 0
+  const discount = computeDiscount(subtotal, sale.discountType, sale.discountValue)
+  const shipping = sale.shippingCost && sale.shippingCost > 0 ? sale.shippingCost : undefined
   await generateDocumentPDF({
     type: 'RECIBO',
     number,
@@ -321,9 +341,11 @@ export async function generateReceiptPDF(
     })),
     subtotal,
     tax,
-    total: subtotal + tax,
+    total: subtotal - discount + tax + (shipping ?? 0),
     includeTax,
     taxRate,
+    discount: discount > 0 ? discount : undefined,
+    shipping,
     config,
   })
 }

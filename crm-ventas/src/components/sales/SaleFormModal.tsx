@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import toast from 'react-hot-toast'
-import { Minus, Plus, Search, ShoppingBag, Trash2, X } from 'lucide-react'
+import { Minus, Plus, Search, Settings2, ShoppingBag, Trash2, X } from 'lucide-react'
 import { useSalesStore } from '../../store/salesStore'
+import { useConfigStore } from '../../store/configStore'
 import { formatMoney, todayInputValue, toDateInputValue } from '../../utils/format'
+import { budgetTotals } from '../../utils/budget'
 import { SALE_STATUSES, STATUS_META } from '../../utils/saleStatus'
 import ProductFormModal from '../products/ProductFormModal'
 import BarcodeScannerModal from '../ui/BarcodeScannerModal'
@@ -46,6 +48,13 @@ export default function SaleFormModal({
   const [scannerManual, setScannerManual] = useState(false)
   // Código de barras escaneado sin producto registrado (precarga el modal de producto)
   const [preloadBarcode, setPreloadBarcode] = useState('')
+  // IVA y ajustes del carrito (se heredan del presupuesto si la venta nace de uno)
+  const [includeTax, setIncludeTax] = useState(true)
+  const [taxRate, setTaxRate] = useState(21)
+  const [discountType, setDiscountType] = useState<'percentage' | 'fixed'>('percentage')
+  const [discountValue, setDiscountValue] = useState(0)
+  const [shippingCost, setShippingCost] = useState(0)
+  const [internalNotes, setInternalNotes] = useState('')
 
   const isEditing = Boolean(sale)
 
@@ -73,17 +82,35 @@ export default function SaleFormModal({
       setStatus(sale.status)
       setDate(toDateInputValue(sale.date))
       setCart(sale.items.map((i) => ({ productId: i.productId, quantity: i.quantity })))
+      setIncludeTax(sale.includeTax ?? true)
+      setTaxRate(sale.taxRate ?? useConfigStore.getState().config.taxRate ?? 21)
+      setDiscountType(sale.discountType ?? 'percentage')
+      setDiscountValue(sale.discountValue ?? 0)
+      setShippingCost(sale.shippingCost ?? 0)
+      setInternalNotes(sale.internalNotes ?? '')
     } else {
       setCustomerId('')
       setStatus('pendiente_pago')
       setDate(todayInputValue())
       setCart([])
       setBudgetId(initialBudgetId ?? '')
+      setIncludeTax(true)
+      setTaxRate(useConfigStore.getState().config.taxRate ?? 21)
+      setDiscountType('percentage')
+      setDiscountValue(0)
+      setShippingCost(0)
+      setInternalNotes('')
       if (initialBudgetId) {
         const b = budgets.find((x) => x.id === initialBudgetId)
         if (b) {
           setCustomerId(b.customerId)
           setCart(b.items.map((i) => ({ productId: i.productId, quantity: i.quantity })))
+          setIncludeTax(b.includeTax ?? true)
+          setTaxRate(b.taxRate ?? useConfigStore.getState().config.taxRate ?? 21)
+          setDiscountType(b.discountType ?? 'percentage')
+          setDiscountValue(b.discountValue ?? 0)
+          setShippingCost(b.shippingCost ?? 0)
+          setInternalNotes(b.internalNotes ?? '')
         }
       }
     }
@@ -107,6 +134,12 @@ export default function SaleFormModal({
     if (b) {
       setCustomerId(b.customerId)
       setCart(b.items.map((i) => ({ productId: i.productId, quantity: i.quantity })))
+      setIncludeTax(b.includeTax ?? true)
+      setTaxRate(b.taxRate ?? useConfigStore.getState().config.taxRate ?? 21)
+      setDiscountType(b.discountType ?? 'percentage')
+      setDiscountValue(b.discountValue ?? 0)
+      setShippingCost(b.shippingCost ?? 0)
+      setInternalNotes(b.internalNotes ?? '')
     }
   }
 
@@ -211,6 +244,16 @@ export default function SaleFormModal({
   const subtotal = lines.reduce((acc, l) => acc + l.product.price * l.qty, 0)
   const totalItems = lines.reduce((acc, l) => acc + l.qty, 0)
 
+  // Total = Subtotal - Descuento + IVA + Envío (misma fórmula que el recibo)
+  const totals = budgetTotals(
+    lines.map((l) => ({ unitPrice: l.product.price, quantity: l.qty })),
+    { includeTax, taxRate, discountType, discountValue, shippingCost },
+  )
+  const discount = totals.discount
+  const tax = totals.tax
+  const shipping = totals.shipping
+  const total = totals.total
+
   // Validación de stock (considera la venta existente en edición)
   const stockErrors = useMemo(() => {
     const errs: string[] = []
@@ -248,6 +291,12 @@ export default function SaleFormModal({
         status,
         date: new Date(`${date}T12:00:00`).toISOString(),
         budgetId: budgetId || undefined,
+        includeTax,
+        taxRate,
+        discountType,
+        discountValue,
+        shippingCost,
+        internalNotes,
       })
     } catch (error) {
       console.error('[electro-crm] Error al guardar la venta:', error)
@@ -508,9 +557,124 @@ export default function SaleFormModal({
                   <span>Subtotal ({totalItems} artículos)</span>
                   <span className="font-semibold text-white">{formatMoney(subtotal)}</span>
                 </div>
-                <div className="mt-1.5 flex justify-between text-secondary">
+                {discount > 0 && (
+                  <div className="mt-1.5 flex justify-between text-rose-300">
+                    <span>Descuento</span>
+                    <span className="font-semibold">-{formatMoney(discount)}</span>
+                  </div>
+                )}
+                {includeTax && tax > 0 && (
+                  <div className="mt-1.5 flex justify-between text-secondary">
+                    <span>Impuestos ({Math.round(taxRate)}%)</span>
+                    <span className="font-semibold text-secondary">{formatMoney(tax)}</span>
+                  </div>
+                )}
+                {shipping > 0 && (
+                  <div className="mt-1.5 flex justify-between text-secondary">
+                    <span>Envío</span>
+                    <span className="font-semibold text-secondary">{formatMoney(shipping)}</span>
+                  </div>
+                )}
+                <div className="mt-1.5 flex justify-between border-t border-app pt-2">
                   <span>Total</span>
-                  <span className="font-bold text-white">{formatMoney(subtotal)}</span>
+                  <span className="font-bold text-white">{formatMoney(total)}</span>
+                </div>
+              </div>
+
+              {/* Ajustes de la venta: descuento, envío y notas internas (solo vendedor) */}
+              <div className="mb-4 rounded-xl border border-app bg-card/60 p-4 backdrop-blur-md">
+                <div className="mb-3 flex items-center gap-2">
+                  <Settings2 className="h-4 w-4 text-violet-300" />
+                  <h4 className="text-sm font-semibold text-white">Ajustes de la venta</h4>
+                </div>
+
+                {/* Descuento: porcentaje o monto fijo */}
+                <div className="mb-3">
+                  <label className="mb-1.5 block text-xs font-medium text-secondary">
+                    Descuento
+                  </label>
+                  <div className="mb-2 grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setDiscountType('percentage')}
+                      aria-pressed={discountType === 'percentage'}
+                      className={`min-h-[44px] rounded-xl border px-2 py-2 text-xs font-semibold transition-all active:scale-95 ${
+                        discountType === 'percentage'
+                          ? 'border-violet-400/60 bg-violet-500/15 text-white'
+                          : 'border-app bg-card text-secondary hover:text-primary'
+                      }`}
+                    >
+                      Porcentaje
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDiscountType('fixed')}
+                      aria-pressed={discountType === 'fixed'}
+                      className={`min-h-[44px] rounded-xl border px-2 py-2 text-xs font-semibold transition-all active:scale-95 ${
+                        discountType === 'fixed'
+                          ? 'border-violet-400/60 bg-violet-500/15 text-white'
+                          : 'border-app bg-card text-secondary hover:text-primary'
+                      }`}
+                    >
+                      Monto fijo
+                    </button>
+                  </div>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      min={0}
+                      max={discountType === 'percentage' ? 100 : undefined}
+                      step="any"
+                      value={discountValue || ''}
+                      onChange={(e) => setDiscountValue(Number(e.target.value))}
+                      placeholder={
+                        discountType === 'percentage' ? 'Ej. 10 = 10%' : 'Ej. 50 = $ 50,00'
+                      }
+                      aria-label="Valor del descuento"
+                      className="min-h-[44px] w-full rounded-xl border border-app bg-card px-3 pr-8 text-sm text-white outline-none transition-colors focus:border-violet-400/60"
+                    />
+                    <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted">
+                      {discountType === 'percentage' ? '%' : '$'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Gastos de envío */}
+                <div className="mb-3">
+                  <label className="mb-1.5 block text-xs font-medium text-secondary">
+                    Gastos de envío
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      min={0}
+                      step="any"
+                      value={shippingCost || ''}
+                      onChange={(e) => setShippingCost(Number(e.target.value))}
+                      placeholder="Ej. 50"
+                      aria-label="Gastos de envío"
+                      className="min-h-[44px] w-full rounded-xl border border-app bg-card px-3 pr-8 text-sm text-white outline-none transition-colors focus:border-violet-400/60"
+                    />
+                    <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted">
+                      $
+                    </span>
+                  </div>
+                </div>
+
+                {/* Notas internas: solo las ve el vendedor */}
+                <div>
+                  <label className="mb-1.5 block text-xs font-medium text-secondary">
+                    Notas internas{' '}
+                    <span className="text-muted">(solo vendedor, no salen en el recibo)</span>
+                  </label>
+                  <textarea
+                    value={internalNotes}
+                    onChange={(e) => setInternalNotes(e.target.value)}
+                    rows={2}
+                    placeholder="Comentarios internos para ti (no aparecen en PDF ni WhatsApp)"
+                    aria-label="Notas internas"
+                    className="min-h-[44px] w-full resize-none rounded-xl border border-app bg-card px-3 py-2.5 text-sm text-white outline-none transition-colors focus:border-violet-400/60"
+                  />
                 </div>
               </div>
 

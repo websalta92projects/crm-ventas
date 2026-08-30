@@ -4,17 +4,42 @@ import type { BudgetItem } from '../types'
 // Impuesto estándar de los presupuestos (IVA 21% por defecto, configurable por presupuesto)
 export const TAX_RATE = 0.21
 
-// Calcula subtotal, IVA y total. Si includeTax es false, el IVA es 0.
-// taxRate se expresa en porcentaje (ej. 21 = 21%).
+// Calcula el descuento aplicado según su tipo.
+// - 'percentage': descuento = subtotal * (valor / 100)
+// - 'fixed': descuento = valor ingresado
+// Nunca supera el subtotal ni puede ser negativo.
+export function computeDiscount(
+  subtotal: number,
+  discountType?: 'percentage' | 'fixed',
+  discountValue?: number,
+): number {
+  const value = Number(discountValue) || 0
+  if (value <= 0) return 0
+  const raw = discountType === 'fixed' ? value : (subtotal * value) / 100
+  return Math.min(subtotal, Math.max(0, raw))
+}
+
+// Calcula subtotal, IVA, descuento, envío y total.
+// Total = Subtotal - Descuento + IVA + Envío.
+// Si includeTax es false, el IVA es 0. taxRate se expresa en porcentaje (ej. 21 = 21%).
 export function budgetTotals(
   items: { unitPrice: number; quantity: number }[],
-  opts?: { includeTax?: boolean; taxRate?: number },
+  opts?: {
+    includeTax?: boolean
+    taxRate?: number
+    discountType?: 'percentage' | 'fixed'
+    discountValue?: number
+    shippingCost?: number
+  },
 ) {
   const subtotal = items.reduce((acc, i) => acc + i.unitPrice * i.quantity, 0)
   const includeTax = opts?.includeTax ?? true
   const rate = (opts?.taxRate ?? Math.round(TAX_RATE * 100)) / 100
   const tax = includeTax ? subtotal * rate : 0
-  return { subtotal, tax, total: subtotal + tax }
+  const discount = computeDiscount(subtotal, opts?.discountType, opts?.discountValue)
+  const shipping = Math.max(0, Number(opts?.shippingCost) || 0)
+  const total = subtotal - discount + tax + shipping
+  return { subtotal, tax, discount, shipping, total }
 }
 
 // Pie de página por defecto cuando no hay uno configurado en Configuración
@@ -40,6 +65,9 @@ export interface DocumentTextOptions {
   includeTax: boolean
   // Porcentaje de IVA usado (ej. 21 = 21%)
   taxRate: number
+  // Descuento aplicado y gastos de envío (se muestran solo si > 0)
+  discount?: number
+  shipping?: number
   // Pie de página personalizado (si viene vacío, se usa DEFAULT_FOOTER)
   footer?: string
 }
@@ -58,10 +86,14 @@ function buildDocumentText(opts: DocumentTextOptions & { docType: string }): str
     total,
     includeTax,
     taxRate,
+    discount,
+    shipping,
     footer,
   } = opts
   const taxLine =
     includeTax && tax > 0 ? [`Impuestos (${Math.round(taxRate)}%): ${plainMoney(tax)}`] : []
+  const discountLine = discount && discount > 0 ? [`Descuento: -${plainMoney(discount)}`] : []
+  const shippingLine = shipping && shipping > 0 ? [`Envío: ${plainMoney(shipping)}`] : []
   const lines = [
     `${docType} #${numberLabel}`,
     `Cliente: ${customerName}`,
@@ -73,7 +105,9 @@ function buildDocumentText(opts: DocumentTextOptions & { docType: string }): str
     ),
     '',
     `Subtotal: ${plainMoney(subtotal)}`,
+    ...discountLine,
     ...taxLine,
+    ...shippingLine,
     `TOTAL: ${plainMoney(total)}`,
     '',
     footer?.trim() || DEFAULT_FOOTER,

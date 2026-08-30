@@ -9,6 +9,7 @@ import {
   Plus,
   Search,
   Send,
+  Settings2,
   UserPlus,
   X,
 } from 'lucide-react'
@@ -56,6 +57,11 @@ export default function BudgetFormModal({ open, budget, onClose }: BudgetFormMod
   // IVA configurable POR presupuesto (por defecto: activado con el % de Configuración)
   const [includeTax, setIncludeTax] = useState(true)
   const [taxRate, setTaxRate] = useState(21)
+  // Ajustes del carrito: descuento, envío y notas internas (solo vendedor)
+  const [discountType, setDiscountType] = useState<'percentage' | 'fixed'>('percentage')
+  const [discountValue, setDiscountValue] = useState(0)
+  const [shippingCost, setShippingCost] = useState(0)
+  const [internalNotes, setInternalNotes] = useState('')
 
   // Carga los datos al abrir
   useEffect(() => {
@@ -65,11 +71,19 @@ export default function BudgetFormModal({ open, budget, onClose }: BudgetFormMod
       setCart(budget.items.map((i) => ({ productId: i.productId, quantity: i.quantity })))
       setIncludeTax(budget.includeTax ?? true)
       setTaxRate(budget.taxRate ?? useConfigStore.getState().config.taxRate ?? 21)
+      setDiscountType(budget.discountType ?? 'percentage')
+      setDiscountValue(budget.discountValue ?? 0)
+      setShippingCost(budget.shippingCost ?? 0)
+      setInternalNotes(budget.internalNotes ?? '')
     } else {
       setCustomerId('')
       setCart([])
       setIncludeTax(true)
       setTaxRate(useConfigStore.getState().config.taxRate ?? 21)
+      setDiscountType('percentage')
+      setDiscountValue(0)
+      setShippingCost(0)
+      setInternalNotes('')
     }
     setProductQuery('')
     setShowProducts(false)
@@ -195,10 +209,13 @@ export default function BudgetFormModal({ open, budget, onClose }: BudgetFormMod
     [cart, productById],
   )
 
-  const { subtotal, tax, total } = budgetTotals(
+  const totals = budgetTotals(
     lines.map((l) => ({ unitPrice: l.product.price, quantity: l.qty })),
-    { includeTax, taxRate },
+    { includeTax, taxRate, discountType, discountValue, shippingCost },
   )
+  const { subtotal, tax, total } = totals
+  const discount = totals.discount
+  const shipping = totals.shipping
   const customer = customerId ? customerById.get(customerId) : undefined
 
   const selectedCustomerName = customer?.name ?? 'Sin cliente'
@@ -224,7 +241,13 @@ export default function BudgetFormModal({ open, budget, onClose }: BudgetFormMod
     const config = useConfigStore.getState().config
     const number = budget?.number ?? config.budgetCounter
     const items = currentItems()
-    const { subtotal, tax, total } = budgetTotals(items, { includeTax, taxRate })
+    const { subtotal, tax, discount, shipping, total } = budgetTotals(items, {
+      includeTax,
+      taxRate,
+      discountType,
+      discountValue,
+      shippingCost,
+    })
     const text = buildCurrentText(number)
 
     // 1. Marca el presupuesto como Enviado
@@ -236,6 +259,10 @@ export default function BudgetFormModal({ open, budget, onClose }: BudgetFormMod
         status: 'enviado',
         includeTax,
         taxRate,
+        discountType,
+        discountValue,
+        shippingCost,
+        internalNotes,
       })
     } catch (error) {
       console.error('[electro-crm] Error al enviar el presupuesto:', error)
@@ -263,6 +290,8 @@ export default function BudgetFormModal({ open, budget, onClose }: BudgetFormMod
         total,
         includeTax,
         taxRate,
+        discount,
+        shipping,
         config,
       })
       const shared = await trySharePdf(text, blob, `presupuesto-${number}.pdf`)
@@ -280,7 +309,13 @@ export default function BudgetFormModal({ open, budget, onClose }: BudgetFormMod
   // Texto unificado: '📋 Copiar' y '📤 WhatsApp' generan EXACTAMENTE el mismo mensaje
   const buildCurrentText = (number?: number): string => {
     const items = currentItems()
-    const { subtotal, tax, total } = budgetTotals(items, { includeTax, taxRate })
+    const { subtotal, tax, discount, shipping, total } = budgetTotals(items, {
+      includeTax,
+      taxRate,
+      discountType,
+      discountValue,
+      shippingCost,
+    })
     return buildBudgetText({
       numberLabel: number ? String(number) : budget ? String(budget.number) : 'NUEVO',
       customerName: selectedCustomerName,
@@ -291,6 +326,8 @@ export default function BudgetFormModal({ open, budget, onClose }: BudgetFormMod
       total,
       includeTax,
       taxRate,
+      discount,
+      shipping,
       footer: useConfigStore.getState().config.footer,
     })
   }
@@ -325,7 +362,13 @@ export default function BudgetFormModal({ open, budget, onClose }: BudgetFormMod
     }
     const config = useConfigStore.getState().config
     const items = currentItems()
-    const { subtotal, tax, total } = budgetTotals(items, { includeTax, taxRate })
+    const { subtotal, tax, discount, shipping, total } = budgetTotals(items, {
+      includeTax,
+      taxRate,
+      discountType,
+      discountValue,
+      shippingCost,
+    })
     const number = budget?.number ?? config.budgetCounter
     try {
       await generateDocumentPDF({
@@ -344,6 +387,8 @@ export default function BudgetFormModal({ open, budget, onClose }: BudgetFormMod
         total,
         includeTax,
         taxRate,
+        discount,
+        shipping,
         config,
       })
       toast.success('PDF generado 📄')
@@ -707,10 +752,22 @@ export default function BudgetFormModal({ open, budget, onClose }: BudgetFormMod
                   <span>Subtotal</span>
                   <span className="font-semibold text-white">{formatMoney(subtotal)}</span>
                 </div>
+                {discount > 0 && (
+                  <div className="mt-2 flex justify-between text-rose-300">
+                    <span>Descuento</span>
+                    <span className="font-semibold">-{formatMoney(discount)}</span>
+                  </div>
+                )}
                 {includeTax && (
                   <div className="mt-2 flex justify-between text-secondary">
                     <span>Impuestos ({Math.round(taxRate)}%)</span>
                     <span className="font-semibold text-secondary">{formatMoney(tax)}</span>
+                  </div>
+                )}
+                {shipping > 0 && (
+                  <div className="mt-2 flex justify-between text-secondary">
+                    <span>Envío</span>
+                    <span className="font-semibold text-secondary">{formatMoney(shipping)}</span>
                   </div>
                 )}
                 <div className="mt-2 flex justify-between border-t border-app pt-2">
@@ -718,6 +775,103 @@ export default function BudgetFormModal({ open, budget, onClose }: BudgetFormMod
                   <span className="text-lg font-extrabold text-emerald-300">
                     {formatMoney(total)}
                   </span>
+                </div>
+              </div>
+
+              {/* Ajustes del presupuesto: descuento, envío y notas internas (solo vendedor) */}
+              <div className="rounded-xl border border-app bg-card/60 p-4 backdrop-blur-md">
+                <div className="mb-3 flex items-center gap-2">
+                  <Settings2 className="h-4 w-4 text-violet-300" />
+                  <h4 className="text-sm font-semibold text-white">Ajustes del presupuesto</h4>
+                </div>
+
+                {/* Descuento: porcentaje o monto fijo */}
+                <div className="mb-3">
+                  <label className="mb-1.5 block text-xs font-medium text-secondary">
+                    Descuento
+                  </label>
+                  <div className="mb-2 grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setDiscountType('percentage')}
+                      aria-pressed={discountType === 'percentage'}
+                      className={`min-h-[44px] rounded-xl border px-2 py-2 text-xs font-semibold transition-all active:scale-95 ${
+                        discountType === 'percentage'
+                          ? 'border-violet-400/60 bg-violet-500/15 text-white'
+                          : 'border-app bg-card text-secondary hover:text-primary'
+                      }`}
+                    >
+                      Porcentaje
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDiscountType('fixed')}
+                      aria-pressed={discountType === 'fixed'}
+                      className={`min-h-[44px] rounded-xl border px-2 py-2 text-xs font-semibold transition-all active:scale-95 ${
+                        discountType === 'fixed'
+                          ? 'border-violet-400/60 bg-violet-500/15 text-white'
+                          : 'border-app bg-card text-secondary hover:text-primary'
+                      }`}
+                    >
+                      Monto fijo
+                    </button>
+                  </div>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      min={0}
+                      max={discountType === 'percentage' ? 100 : undefined}
+                      step="any"
+                      value={discountValue || ''}
+                      onChange={(e) => setDiscountValue(Number(e.target.value))}
+                      placeholder={
+                        discountType === 'percentage' ? 'Ej. 10 = 10%' : 'Ej. 50 = $ 50,00'
+                      }
+                      aria-label="Valor del descuento"
+                      className="min-h-[44px] w-full rounded-xl border border-app bg-card px-3 pr-8 text-sm text-white outline-none transition-colors focus:border-violet-400/60"
+                    />
+                    <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted">
+                      {discountType === 'percentage' ? '%' : '$'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Gastos de envío */}
+                <div className="mb-3">
+                  <label className="mb-1.5 block text-xs font-medium text-secondary">
+                    Gastos de envío
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      min={0}
+                      step="any"
+                      value={shippingCost || ''}
+                      onChange={(e) => setShippingCost(Number(e.target.value))}
+                      placeholder="Ej. 50"
+                      aria-label="Gastos de envío"
+                      className="min-h-[44px] w-full rounded-xl border border-app bg-card px-3 pr-8 text-sm text-white outline-none transition-colors focus:border-violet-400/60"
+                    />
+                    <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted">
+                      $
+                    </span>
+                  </div>
+                </div>
+
+                {/* Notas internas: solo las ve el vendedor */}
+                <div>
+                  <label className="mb-1.5 block text-xs font-medium text-secondary">
+                    Notas internas{' '}
+                    <span className="text-muted">(solo vendedor, no salen en el presupuesto)</span>
+                  </label>
+                  <textarea
+                    value={internalNotes}
+                    onChange={(e) => setInternalNotes(e.target.value)}
+                    rows={2}
+                    placeholder="Comentarios internos para ti (no aparecen en PDF ni WhatsApp)"
+                    aria-label="Notas internas"
+                    className="min-h-[44px] w-full resize-none rounded-xl border border-app bg-card px-3 py-2.5 text-sm text-white outline-none transition-colors focus:border-violet-400/60"
+                  />
                 </div>
               </div>
 

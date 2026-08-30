@@ -28,7 +28,7 @@ import { useConfigStore } from '../store/configStore'
 import { formatDateTime, formatDateOnly, formatMoney, formatMoneyCompact } from '../utils/format'
 import { SALE_STATUSES, STATUS_META } from '../utils/saleStatus'
 import { saleProfit, saleTotal, saleUnits } from '../utils/sale'
-import { buildReceiptText, buildWhatsAppLink } from '../utils/budget'
+import { buildReceiptText, buildWhatsAppLink, computeDiscount } from '../utils/budget'
 import { generateReceiptPDF } from '../utils/documentPDF'
 import type { Sale, SaleStatus } from '../types'
 
@@ -262,6 +262,8 @@ export default function Sales({ initialBudgetId, onBudgetConsumed, refreshKey }:
     const taxRate = sale.taxRate ?? config.taxRate ?? 21
     const subtotal = saleTotal(sale)
     const tax = includeTax ? subtotal * (taxRate / 100) : 0
+    const discount = computeDiscount(subtotal, sale.discountType, sale.discountValue)
+    const shipping = sale.shippingCost && sale.shippingCost > 0 ? sale.shippingCost : undefined
     return buildReceiptText({
       numberLabel: String(number),
       customerName: customer?.name ?? 'Sin cliente',
@@ -275,9 +277,11 @@ export default function Sales({ initialBudgetId, onBudgetConsumed, refreshKey }:
       })),
       subtotal,
       tax,
-      total: subtotal + tax,
+      total: subtotal - discount + tax + (shipping ?? 0),
       includeTax,
       taxRate,
+      discount: discount > 0 ? discount : undefined,
+      shipping,
       footer: config.footer,
     })
   }
@@ -476,6 +480,14 @@ export default function Sales({ initialBudgetId, onBudgetConsumed, refreshKey }:
                         <span className="truncate font-medium text-white">
                           {first?.name ?? 'Producto'}
                         </span>
+                        {sale.internalNotes && (
+                          <span
+                            title={`Nota interna: ${sale.internalNotes}`}
+                            className="cursor-help text-xs text-amber-300"
+                          >
+                            📝
+                          </span>
+                        )}
                         {sale.items.length > 1 && (
                           <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-medium text-secondary">
                             +{sale.items.length - 1}
@@ -484,6 +496,14 @@ export default function Sales({ initialBudgetId, onBudgetConsumed, refreshKey }:
                       </span>
                       <span className="flex items-center gap-1 md:hidden">
                         <span className="text-lg">{first?.emoji ?? '📦'}</span>
+                        {sale.internalNotes && (
+                          <span
+                            title={`Nota interna: ${sale.internalNotes}`}
+                            className="cursor-help text-xs text-amber-300"
+                          >
+                            📝
+                          </span>
+                        )}
                         {sale.items.length > 1 && (
                           <span className="rounded-full bg-white/10 px-1.5 py-0.5 text-[10px] font-medium text-secondary">
                             +{sale.items.length - 1}

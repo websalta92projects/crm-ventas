@@ -25,7 +25,7 @@ import { useSalesStore } from '../store/salesStore'
 import { useConfigStore } from '../store/configStore'
 import { formatDateOnly, formatMoney, formatMoneyCompact } from '../utils/format'
 import { BUDGET_STATUSES, BUDGET_STATUS_META } from '../utils/budgetStatus'
-import { buildBudgetText, buildWhatsAppLink } from '../utils/budget'
+import { buildBudgetText, buildWhatsAppLink, computeDiscount } from '../utils/budget'
 import { generateBudgetPDF } from '../utils/documentPDF'
 import type { Budget, BudgetStatus } from '../types'
 
@@ -95,6 +95,8 @@ export default function Budgets({ onCreateSale, refreshKey }: BudgetsProps) {
 
   const copyBudget = async (b: Budget) => {
     try {
+      const discount = computeDiscount(b.subtotal, b.discountType, b.discountValue)
+      const shipping = b.shippingCost && b.shippingCost > 0 ? b.shippingCost : undefined
       const text = buildBudgetText({
         numberLabel: String(b.number),
         customerName: customerById.get(b.customerId)?.name ?? 'Sin cliente',
@@ -105,6 +107,8 @@ export default function Budgets({ onCreateSale, refreshKey }: BudgetsProps) {
         total: b.total,
         includeTax: b.includeTax ?? true,
         taxRate: b.taxRate ?? 21,
+        discount,
+        shipping,
         footer: useConfigStore.getState().config.footer,
       })
       await navigator.clipboard.writeText(text)
@@ -139,6 +143,8 @@ export default function Budgets({ onCreateSale, refreshKey }: BudgetsProps) {
       toast.error('El cliente no tiene teléfono registrado')
       return
     }
+    const discount = computeDiscount(b.subtotal, b.discountType, b.discountValue)
+    const shipping = b.shippingCost && b.shippingCost > 0 ? b.shippingCost : undefined
     const text = buildBudgetText({
       numberLabel: String(b.number),
       customerName: customerById.get(b.customerId)?.name ?? 'Sin cliente',
@@ -149,6 +155,8 @@ export default function Budgets({ onCreateSale, refreshKey }: BudgetsProps) {
       total: b.total,
       includeTax: b.includeTax ?? true,
       taxRate: b.taxRate ?? 21,
+      discount,
+      shipping,
       footer: useConfigStore.getState().config.footer,
     })
     window.open(buildWhatsAppLink(customer.phone, text), '_blank')
@@ -419,7 +427,17 @@ export default function Budgets({ onCreateSale, refreshKey }: BudgetsProps) {
                     className="cursor-pointer border-b border-app text-secondary last:border-0 hover:bg-card"
                   >
                     <td className="min-w-[60px] px-5 py-3 text-xs md:text-sm">
-                      <span className="font-semibold text-white">#{b.number}</span>
+                      <span className="flex items-center gap-1 font-semibold text-white">
+                        #{b.number}
+                        {b.internalNotes && (
+                          <span
+                            title={`Nota interna: ${b.internalNotes}`}
+                            className="cursor-help text-xs text-amber-300"
+                          >
+                            📝
+                          </span>
+                        )}
+                      </span>
                     </td>
                     <td className="min-w-[100px] max-w-[150px] px-4 py-3 md:max-w-none">
                       <span className="hidden truncate md:block">{customerName}</span>
@@ -506,6 +524,16 @@ export default function Budgets({ onCreateSale, refreshKey }: BudgetsProps) {
           status={<StatusBadge status={detail.status} />}
           lines={[
             { label: 'Subtotal', value: formatMoney(detail.subtotal) },
+            ...(detail.discountValue && detail.discountValue > 0
+              ? [
+                  {
+                    label: 'Descuento',
+                    value: `-${formatMoney(
+                      computeDiscount(detail.subtotal, detail.discountType, detail.discountValue),
+                    )}`,
+                  },
+                ]
+              : []),
             ...(detail.includeTax !== false && detail.tax > 0
               ? [
                   {
@@ -513,6 +541,9 @@ export default function Budgets({ onCreateSale, refreshKey }: BudgetsProps) {
                     value: formatMoney(detail.tax),
                   },
                 ]
+              : []),
+            ...(detail.shippingCost && detail.shippingCost > 0
+              ? [{ label: 'Envío', value: formatMoney(detail.shippingCost) }]
               : []),
             { label: 'Total', value: formatMoney(detail.total), strong: true },
           ]}

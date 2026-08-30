@@ -38,6 +38,11 @@ interface SalesStore {
     // IVA del recibo (si viene de un presupuesto, se hereda de él)
     includeTax?: boolean
     taxRate?: number
+    // Ajustes del carrito: descuento, envío y notas internas
+    discountType?: 'percentage' | 'fixed'
+    discountValue?: number
+    shippingCost?: number
+    internalNotes?: string
   }) => void
   removeSale: (id: string) => void
   setSaleStatus: (id: string, status: SaleStatus) => void
@@ -57,6 +62,11 @@ interface SalesStore {
     // IVA configurable por presupuesto
     includeTax: boolean
     taxRate: number
+    // Ajustes del carrito: descuento, envío y notas internas
+    discountType?: 'percentage' | 'fixed'
+    discountValue?: number
+    shippingCost?: number
+    internalNotes?: string
   }) => void
   removeBudget: (id: string) => void
   setBudgetStatus: (id: string, status: BudgetStatus) => void
@@ -138,10 +148,18 @@ export const useSalesStore = create<SalesStore>()(
             status: data.status,
             date: data.date,
             budgetId: data.budgetId,
-            includeTax: sourceBudget ? sourceBudget.includeTax : data.includeTax ?? true,
-            taxRate: sourceBudget
-              ? sourceBudget.taxRate
-              : data.taxRate ?? useConfigStore.getState().config.taxRate ?? 21,
+            // Se priorizan los valores explícitos de la venta; si no vienen
+            // (p. ej. al aceptar un presupuesto), se heredan del presupuesto origen.
+            includeTax: data.includeTax ?? sourceBudget?.includeTax ?? true,
+            taxRate:
+              data.taxRate ??
+              sourceBudget?.taxRate ??
+              useConfigStore.getState().config.taxRate ??
+              21,
+            discountType: data.discountType ?? sourceBudget?.discountType,
+            discountValue: data.discountValue ?? sourceBudget?.discountValue,
+            shippingCost: data.shippingCost ?? sourceBudget?.shippingCost,
+            internalNotes: data.internalNotes ?? sourceBudget?.internalNotes,
           }
 
           // Si la venta nace de un presupuesto, ese presupuesto pasa a "Aceptado"
@@ -327,6 +345,9 @@ export const useSalesStore = create<SalesStore>()(
           const { subtotal, tax, total } = budgetTotals(items, {
             includeTax: data.includeTax,
             taxRate: data.taxRate,
+            discountType: data.discountType,
+            discountValue: data.discountValue,
+            shippingCost: data.shippingCost,
           })
 
           if (data.id) {
@@ -343,6 +364,10 @@ export const useSalesStore = create<SalesStore>()(
                       status: data.status,
                       includeTax: data.includeTax,
                       taxRate: data.taxRate,
+                      discountType: data.discountType,
+                      discountValue: data.discountValue,
+                      shippingCost: data.shippingCost,
+                      internalNotes: data.internalNotes,
                       updatedAt: nowIso(),
                     }
                   : b,
@@ -362,6 +387,10 @@ export const useSalesStore = create<SalesStore>()(
             status: data.status,
             includeTax: data.includeTax,
             taxRate: data.taxRate,
+            discountType: data.discountType,
+            discountValue: data.discountValue,
+            shippingCost: data.shippingCost,
+            internalNotes: data.internalNotes,
             createdAt: nowIso(),
             updatedAt: nowIso(),
           }
