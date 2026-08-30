@@ -1,4 +1,4 @@
-import type { DailyPoint, Product, Sale, SalesSummary, TopProduct } from '../types'
+import type { Customer, DailyPoint, Product, Sale, SalesSummary, TopProduct } from '../types'
 import { formatDayLabel } from './format'
 
 export function startOfDay(date: Date): Date {
@@ -114,4 +114,103 @@ export function getDailySeries(sales: Sale[], days = 30, now = new Date()): Dail
     }
   }
   return points
+}
+
+// ===== Nuevas agregaciones del Dashboard (solo ventas pagadas/entregadas) =====
+
+export interface CategorySales {
+  name: string
+  value: number
+  revenue: number
+}
+
+// Ventas agrupadas por categoría de producto, ordenadas por ingreso descendente.
+export function getSalesByCategory(sales: Sale[], products: Product[]): CategorySales[] {
+  const byId = new Map(products.map((p) => [p.id, p]))
+  const map = new Map<string, { value: number; revenue: number }>()
+  for (const s of sales) {
+    if (!isCountedSale(s)) continue
+    for (const item of s.items) {
+      const product = byId.get(item.productId)
+      const cat = product?.category ?? 'Sin categoría'
+      const agg = map.get(cat) ?? { value: 0, revenue: 0 }
+      agg.value += item.quantity
+      agg.revenue += item.unitPrice * item.quantity
+      map.set(cat, agg)
+    }
+  }
+  return [...map.entries()]
+    .map(([name, agg]) => ({ name, ...agg }))
+    .sort((a, b) => b.revenue - a.revenue)
+}
+
+export interface DayComparison {
+  todayTotal: number
+  todayUnits: number
+  yesterdayTotal: number
+  yesterdayUnits: number
+}
+
+// Comparativa de ventas de HOY vs AYER (solo pagadas/entregadas).
+export function getTodayVsYesterday(sales: Sale[], now: Date = new Date()): DayComparison {
+  const today = startOfDay(now)
+  const yesterday = new Date(today.getTime() - 86_400_000)
+  let todayTotal = 0
+  let todayUnits = 0
+  let yesterdayTotal = 0
+  let yesterdayUnits = 0
+
+  for (const s of sales) {
+    if (!isCountedSale(s)) continue
+    const day = startOfDay(new Date(s.date)).getTime()
+    let total = 0
+    let units = 0
+    for (const item of s.items) {
+      total += item.unitPrice * item.quantity
+      units += item.quantity
+    }
+    if (day === today.getTime()) {
+      todayTotal += total
+      todayUnits += units
+    } else if (day === yesterday.getTime()) {
+      yesterdayTotal += total
+      yesterdayUnits += units
+    }
+  }
+
+  return { todayTotal, todayUnits, yesterdayTotal, yesterdayUnits }
+}
+
+export interface FrequentCustomer {
+  customer: Customer
+  purchases: number
+  units: number
+  total: number
+}
+
+// Top clientes por monto total gastado (solo ventas pagadas/entregadas).
+export function getFrequentCustomers(
+  sales: Sale[],
+  customers: Customer[],
+  limit = 5,
+): FrequentCustomer[] {
+  const map = new Map<string, { purchases: number; units: number; total: number }>()
+  for (const s of sales) {
+    if (!isCountedSale(s) || !s.customerId) continue
+    const agg = map.get(s.customerId) ?? { purchases: 0, units: 0, total: 0 }
+    agg.purchases += 1
+    for (const item of s.items) {
+      agg.units += item.quantity
+      agg.total += item.unitPrice * item.quantity
+    }
+    map.set(s.customerId, agg)
+  }
+  return [...map.entries()]
+    .map(([id, agg]) => {
+      const customer = customers.find((c) => c.id === id)
+      return customer ? { customer, ...agg } : null
+    })
+    .filter((x): x is FrequentCustomer => x !== null)
+    .sort((a, b) => b.total - a.total)
+    .slice(0, limit)
 }

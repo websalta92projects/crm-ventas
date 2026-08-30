@@ -30,6 +30,8 @@ export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [saleModalOpen, setSaleModalOpen] = useState(false)
   const [saleFromBudgetId, setSaleFromBudgetId] = useState<string | null>(null)
+  // Búsqueda inicial para la página de Clientes (desde el Dashboard: clientes frecuentes)
+  const [customerSearch, setCustomerSearch] = useState('')
 
   // "Force refresh": sube con cada cambio de datos del store. Se pasa a las
   // páginas con listas para garantizar que siempre se re-rendericen tras guardar,
@@ -84,7 +86,15 @@ export default function App() {
           showNewSale={view === 'dashboard'}
         />
         <main id="main-content" className="flex-1 overflow-y-auto px-4 pb-10 md:px-8">
-          {view === 'dashboard' && <Dashboard />}
+          {view === 'dashboard' && (
+            <Dashboard
+              onNavigate={navigate}
+              onSearchCustomer={(name) => {
+                setCustomerSearch(name)
+                navigate('clientes')
+              }}
+            />
+          )}
           {view === 'productos' && <Products refreshKey={refreshKey} />}
           {view === 'ventas' && (
             <Sales
@@ -94,7 +104,7 @@ export default function App() {
             />
           )}
           {view === 'presupuestos' && <Budgets onCreateSale={createSaleFromBudget} refreshKey={refreshKey} />}
-          {view === 'clientes' && <Customers refreshKey={refreshKey} />}
+          {view === 'clientes' && <Customers refreshKey={refreshKey} initialQuery={customerSearch} />}
           {view === 'reportes' && <Reports />}
           {view === 'configuracion' && <Settings />}
         </main>

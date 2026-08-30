@@ -11,17 +11,28 @@ import { useSalesStore } from '../store/salesStore'
 import { saleTotal } from '../utils/sale'
 import type { Customer } from '../types'
 
-export default function Customers({ refreshKey = 0 }: { refreshKey?: number }) {
+export default function Customers({
+  refreshKey = 0,
+  initialQuery = '',
+}: {
+  refreshKey?: number
+  initialQuery?: string
+}) {
   const customers = useSalesStore((s) => s.customers)
   const sales = useSalesStore((s) => s.sales)
   const removeCustomer = useSalesStore((s) => s.removeCustomer)
 
-  const [query, setQuery] = useState('')
+  const [query, setQuery] = useState(initialQuery)
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<Customer | null>(null)
   const [deleting, setDeleting] = useState<Customer | null>(null)
   const [historyCustomer, setHistoryCustomer] = useState<Customer | null>(null)
   const [page, setPage] = useState(1)
+
+  // Aplica la búsqueda inicial pedida desde el Dashboard (cliente frecuente)
+  useEffect(() => {
+    if (initialQuery) setQuery(initialQuery)
+  }, [initialQuery])
 
   // Al buscar o filtrar, vuelve a la primera página
   useEffect(() => {

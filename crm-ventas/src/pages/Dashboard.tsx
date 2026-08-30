@@ -4,12 +4,22 @@ import { CalendarDays, ClipboardList, ShoppingCart, Trophy, Wallet } from 'lucid
 import KpiCard from '../components/dashboard/KpiCard'
 import SalesChart from '../components/dashboard/SalesChart'
 import TopProductsChart from '../components/dashboard/TopProductsChart'
+import SalesByCategoryChart from '../components/dashboard/SalesByCategoryChart'
+import LowStockAlerts from '../components/dashboard/LowStockAlerts'
+import TodayVsYesterdayCard from '../components/dashboard/TodayVsYesterdayCard'
+import TopCustomersList from '../components/dashboard/TopCustomersList'
 import RecentSales from '../components/dashboard/RecentSales'
 import { useSalesStore } from '../store/salesStore'
 import { getSalesSummary } from '../utils/stats'
 import { formatMoney } from '../utils/format'
+import type { View } from '../types'
 
-export default function Dashboard() {
+interface DashboardProps {
+  onNavigate?: (view: View) => void
+  onSearchCustomer?: (customerName: string) => void
+}
+
+export default function Dashboard({ onNavigate, onSearchCustomer }: DashboardProps) {
   const sales = useSalesStore((s) => s.sales)
   const products = useSalesStore((s) => s.products)
   const budgets = useSalesStore((s) => s.budgets)
@@ -79,14 +89,29 @@ export default function Dashboard() {
         />
       </div>
 
+      {/* Gráfico principal + ventas por categoría */}
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-3">
         <div className="xl:col-span-2">
           <SalesChart />
         </div>
-        <TopProductsChart />
+        <SalesByCategoryChart />
       </div>
 
-      <RecentSales />
+      {/* Top productos + comparativa hoy/ayer + alertas de stock */}
+      <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+        <TopProductsChart />
+        <TodayVsYesterdayCard />
+        <LowStockAlerts onGoToProducts={() => onNavigate?.('productos')} />
+      </div>
+
+      {/* Clientes frecuentes + últimas ventas */}
+      <div className="grid grid-cols-1 gap-5 xl:grid-cols-3">
+        <TopCustomersList onSelect={(name) => onSearchCustomer?.(name)} />
+        <div className="xl:col-span-2">
+          <RecentSales />
+        </div>
+      </div>
     </motion.div>
   )
 }
+
