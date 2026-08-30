@@ -423,6 +423,102 @@ export default function SaleFormModal({
                 </div>
               )}
 
+              {/* Cliente: tarjeta seleccionada o buscador (opcional) */}
+              {customer ? (
+                <div className="mb-4 flex items-center gap-3 rounded-xl border border-app bg-card p-4">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-sky-500 text-xs font-bold text-white">
+                    {customer.name.slice(0, 2).toUpperCase()}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold text-white">{customer.name}</p>
+                    <p className="truncate text-xs text-secondary">
+                      {customer.phone || 'Sin teléfono'}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCustomerId('')
+                      setCustomerQuery('')
+                      setShowCustomers(true)
+                    }}
+                    className="glass glass-hover flex min-h-[44px] shrink-0 items-center gap-1.5 rounded-xl px-3 text-xs font-medium text-sky-300"
+                  >
+                    Cambiar cliente
+                  </button>
+                </div>
+              ) : (
+                <div className="relative mb-4">
+                  <label className="mb-1.5 block text-xs font-medium text-secondary">
+                    Cliente <span className="text-muted">(opcional)</span>
+                  </label>
+                  <div className="glass flex items-center gap-2 rounded-xl px-3 py-2">
+                    <Search className="h-4 w-4 shrink-0 text-muted" />
+                    <input
+                      value={customerQuery}
+                      onChange={(e) => {
+                        setCustomerQuery(e.target.value)
+                        setShowCustomers(true)
+                      }}
+                      onFocus={() => setShowCustomers(true)}
+                      placeholder="Buscar cliente…"
+                      className="w-full bg-transparent text-sm text-primary placeholder:text-muted focus:outline-none"
+                    />
+                  </div>
+                  {showCustomers && (
+                    <div className="absolute z-50 mt-1 w-full overflow-hidden rounded-xl border border-app bg-panel shadow-xl backdrop-blur-md">
+                      {/* Vender sin cliente (mostrador) */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCustomerId('')
+                          setCustomerQuery('')
+                          setShowCustomers(false)
+                        }}
+                        className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-secondary transition-colors hover:bg-card"
+                      >
+                        <span className="text-base">🧍</span>
+                        <span className="flex-1">Sin cliente (mostrador)</span>
+                      </button>
+                      {customerResults.map((c) => (
+                        <button
+                          type="button"
+                          key={c.id}
+                          onClick={() => {
+                            setCustomerId(c.id)
+                            setCustomerQuery('')
+                            setShowCustomers(false)
+                          }}
+                          className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-primary transition-colors hover:bg-card"
+                        >
+                          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/10 text-[10px] font-bold text-white">
+                            {c.name.slice(0, 2).toUpperCase()}
+                          </span>
+                          <span className="min-w-0 flex-1 truncate">{c.name}</span>
+                          <span className="text-xs text-muted">{c.phone}</span>
+                        </button>
+                      ))}
+                      {customerResults.length === 0 && (
+                        <p className="border-t border-app px-3 py-2 text-xs text-muted">
+                          No se encontraron clientes
+                        </p>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowCustomers(false)
+                          setCustomerModalOpen(true)
+                        }}
+                        className="flex w-full items-center gap-2 border-t border-app px-3 py-2 text-left text-sm font-medium text-sky-300 transition-colors hover:bg-card"
+                      >
+                        <UserPlus className="h-4 w-4" />
+                        Crear cliente nuevo…
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Buscador de productos (agregar al carrito) */}
               <div className="relative mb-4">
                 <label className="mb-1.5 block text-xs font-medium text-secondary">
@@ -578,36 +674,6 @@ export default function SaleFormModal({
                 </p>
               )}
 
-              {/* Resumen */}
-              <div className="mb-4 rounded-xl border border-app bg-card p-4 text-sm">
-                <div className="flex justify-between text-secondary">
-                  <span>Subtotal ({totalItems} artículos)</span>
-                  <span className="font-semibold text-white">{formatMoney(subtotal)}</span>
-                </div>
-                {discount > 0 && (
-                  <div className="mt-1.5 flex justify-between text-rose-300">
-                    <span>Descuento</span>
-                    <span className="font-semibold">-{formatMoney(discount)}</span>
-                  </div>
-                )}
-                {includeTax && tax > 0 && (
-                  <div className="mt-1.5 flex justify-between text-secondary">
-                    <span>Impuestos ({Math.round(taxRate)}%)</span>
-                    <span className="font-semibold text-secondary">{formatMoney(tax)}</span>
-                  </div>
-                )}
-                {shipping > 0 && (
-                  <div className="mt-1.5 flex justify-between text-secondary">
-                    <span>Envío</span>
-                    <span className="font-semibold text-secondary">{formatMoney(shipping)}</span>
-                  </div>
-                )}
-                <div className="mt-1.5 flex justify-between border-t border-app pt-2">
-                  <span>Total</span>
-                  <span className="font-bold text-white">{formatMoney(total)}</span>
-                </div>
-              </div>
-
               {/* Ajustes de la venta: descuento, envío y notas internas (solo vendedor) */}
               <div className="mb-4 rounded-xl border border-app bg-card/60 p-4 backdrop-blur-md">
                 <div className="mb-3 flex items-center gap-2">
@@ -705,101 +771,35 @@ export default function SaleFormModal({
                 </div>
               </div>
 
-              {/* Cliente: tarjeta seleccionada o buscador (opcional) */}
-              {customer ? (
-                <div className="mb-4 flex items-center gap-3 rounded-xl border border-app bg-card p-4">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-sky-500 text-xs font-bold text-white">
-                    {customer.name.slice(0, 2).toUpperCase()}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-semibold text-white">{customer.name}</p>
-                    <p className="truncate text-xs text-secondary">
-                      {customer.phone || 'Sin teléfono'}
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setCustomerId('')
-                      setCustomerQuery('')
-                      setShowCustomers(true)
-                    }}
-                    className="glass glass-hover flex min-h-[44px] shrink-0 items-center gap-1.5 rounded-xl px-3 text-xs font-medium text-sky-300"
-                  >
-                    Cambiar cliente
-                  </button>
+              {/* Resumen */}
+              <div className="mb-4 rounded-xl border border-app bg-card p-4 text-sm">
+                <div className="flex justify-between text-secondary">
+                  <span>Subtotal ({totalItems} artículos)</span>
+                  <span className="font-semibold text-white">{formatMoney(subtotal)}</span>
                 </div>
-              ) : (
-                <div className="relative mb-4">
-                  <label className="mb-1.5 block text-xs font-medium text-secondary">
-                    Cliente <span className="text-muted">(opcional)</span>
-                  </label>
-                  <div className="glass flex items-center gap-2 rounded-xl px-3 py-2">
-                    <Search className="h-4 w-4 shrink-0 text-muted" />
-                    <input
-                      value={customerQuery}
-                      onChange={(e) => {
-                        setCustomerQuery(e.target.value)
-                        setShowCustomers(true)
-                      }}
-                      onFocus={() => setShowCustomers(true)}
-                      placeholder="Buscar cliente…"
-                      className="w-full bg-transparent text-sm text-primary placeholder:text-muted focus:outline-none"
-                    />
+                {discount > 0 && (
+                  <div className="mt-1.5 flex justify-between text-rose-300">
+                    <span>Descuento</span>
+                    <span className="font-semibold">-{formatMoney(discount)}</span>
                   </div>
-                  {showCustomers && (
-                    <div className="absolute z-50 mt-1 w-full overflow-hidden rounded-xl border border-app bg-panel shadow-xl backdrop-blur-md">
-                      {/* Vender sin cliente (mostrador) */}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setCustomerId('')
-                          setCustomerQuery('')
-                          setShowCustomers(false)
-                        }}
-                        className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-secondary transition-colors hover:bg-card"
-                      >
-                        <span className="text-base">🧍</span>
-                        <span className="flex-1">Sin cliente (mostrador)</span>
-                      </button>
-                      {customerResults.map((c) => (
-                        <button
-                          type="button"
-                          key={c.id}
-                          onClick={() => {
-                            setCustomerId(c.id)
-                            setCustomerQuery('')
-                            setShowCustomers(false)
-                          }}
-                          className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-primary transition-colors hover:bg-card"
-                        >
-                          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/10 text-[10px] font-bold text-white">
-                            {c.name.slice(0, 2).toUpperCase()}
-                          </span>
-                          <span className="min-w-0 flex-1 truncate">{c.name}</span>
-                          <span className="text-xs text-muted">{c.phone}</span>
-                        </button>
-                      ))}
-                      {customerResults.length === 0 && (
-                        <p className="border-t border-app px-3 py-2 text-xs text-muted">
-                          No se encontraron clientes
-                        </p>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setShowCustomers(false)
-                          setCustomerModalOpen(true)
-                        }}
-                        className="flex w-full items-center gap-2 border-t border-app px-3 py-2 text-left text-sm font-medium text-sky-300 transition-colors hover:bg-card"
-                      >
-                        <UserPlus className="h-4 w-4" />
-                        Crear cliente nuevo…
-                      </button>
-                    </div>
-                  )}
+                )}
+                {includeTax && tax > 0 && (
+                  <div className="mt-1.5 flex justify-between text-secondary">
+                    <span>Impuestos ({Math.round(taxRate)}%)</span>
+                    <span className="font-semibold text-secondary">{formatMoney(tax)}</span>
+                  </div>
+                )}
+                {shipping > 0 && (
+                  <div className="mt-1.5 flex justify-between text-secondary">
+                    <span>Envío</span>
+                    <span className="font-semibold text-secondary">{formatMoney(shipping)}</span>
+                  </div>
+                )}
+                <div className="mt-1.5 flex justify-between border-t border-app pt-2">
+                  <span>Total</span>
+                  <span className="font-bold text-white">{formatMoney(total)}</span>
                 </div>
-              )}
+              </div>
 
               <div className="mb-4 grid grid-cols-2 gap-4">
                 <div>
