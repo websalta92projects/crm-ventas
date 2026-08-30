@@ -1,16 +1,17 @@
 import { useEffect, useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import toast from 'react-hot-toast'
-import { Minus, Plus, Search, Settings2, ShoppingBag, Trash2, X } from 'lucide-react'
+import { Minus, Plus, Search, Settings2, ShoppingBag, Trash2, UserPlus, X } from 'lucide-react'
 import { useSalesStore } from '../../store/salesStore'
 import { useConfigStore } from '../../store/configStore'
 import { formatMoney, todayInputValue, toDateInputValue } from '../../utils/format'
 import { budgetTotals } from '../../utils/budget'
 import { SALE_STATUSES, STATUS_META } from '../../utils/saleStatus'
 import ProductFormModal from '../products/ProductFormModal'
+import CustomerFormModal from '../customers/CustomerFormModal'
 import BarcodeScannerModal from '../ui/BarcodeScannerModal'
 import UsbBarcodeCapture from '../ui/UsbBarcodeCapture'
-import type { Product, Sale, SaleStatus } from '../../types'
+import type { Customer, Product, Sale, SaleStatus } from '../../types'
 
 interface CartLine {
   productId: string
@@ -37,6 +38,9 @@ export default function SaleFormModal({
 
   const [budgetId, setBudgetId] = useState('')
   const [customerId, setCustomerId] = useState('')
+  const [customerQuery, setCustomerQuery] = useState('')
+  const [showCustomers, setShowCustomers] = useState(false)
+  const [customerModalOpen, setCustomerModalOpen] = useState(false)
   const [status, setStatus] = useState<SaleStatus>('pendiente_pago')
   const [date, setDate] = useState(todayInputValue())
   const [cart, setCart] = useState<CartLine[]>([])
@@ -60,6 +64,26 @@ export default function SaleFormModal({
 
   const productById = useMemo(() => new Map(products.map((p) => [p.id, p])), [products])
   const customerById = useMemo(() => new Map(customers.map((c) => [c.id, c])), [customers])
+
+  // Cliente seleccionado (opcional: puede quedar "Sin cliente")
+  const customer = customerId ? customerById.get(customerId) : undefined
+
+  // Resultados del buscador de clientes (por nombre o teléfono)
+  const customerResults = useMemo(() => {
+    const q = customerQuery.trim().toLowerCase()
+    if (!q) return customers.slice(0, 6)
+    return customers
+      .filter((c) => c.name.toLowerCase().includes(q) || c.phone.includes(q))
+      .slice(0, 6)
+  }, [customerQuery, customers])
+
+  // Cliente creado/actualizado desde el modal → se selecciona automáticamente
+  const handleCustomerSaved = (created: Customer) => {
+    setCustomerModalOpen(false)
+    setCustomerId(created.id)
+    setCustomerQuery('')
+    setShowCustomers(false)
+  }
 
   // Presupuestos listos para convertirse en venta (Enviado o Aceptado y sin venta previa)
   const convertibleBudgets = useMemo(
@@ -119,6 +143,9 @@ export default function SaleFormModal({
     setProductModalOpen(false)
     setScannerOpen(false)
     setPreloadBarcode('')
+    setCustomerQuery('')
+    setShowCustomers(false)
+    setCustomerModalOpen(false)
   }, [open, sale, initialBudgetId, budgets])
 
   const productResults = useMemo(() => {
@@ -320,7 +347,7 @@ export default function SaleFormModal({
         <>
           {/* Campo oculto que captura el input del lector USB de código de barras */}
           <UsbBarcodeCapture
-            active={open && !productModalOpen && !scannerOpen}
+            active={open && !productModalOpen && !scannerOpen && !customerModalOpen}
             onScan={handleUsbBarcodeScanned}
           />
           <motion.div
@@ -678,24 +705,101 @@ export default function SaleFormModal({
                 </div>
               </div>
 
-              {/* Cliente */}
-              <div className="mb-4">
-                <label className="mb-1.5 block text-xs font-medium text-secondary">Cliente</label>
-                <select
-                  value={customerId}
-                  onChange={(e) => setCustomerId(e.target.value)}
-                  className="w-full rounded-xl border border-app bg-card px-3 py-2.5 text-sm text-white outline-none transition-colors focus:border-violet-400/60"
-                >
-                  <option value="" className="bg-panel">
-                    Sin cliente (mostrador)
-                  </option>
-                  {customers.map((c) => (
-                    <option key={c.id} value={c.id} className="bg-panel">
-                      {c.name} — {c.phone}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              {/* Cliente: tarjeta seleccionada o buscador (opcional) */}
+              {customer ? (
+                <div className="mb-4 flex items-center gap-3 rounded-xl border border-app bg-card p-4">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-sky-500 text-xs font-bold text-white">
+                    {customer.name.slice(0, 2).toUpperCase()}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold text-white">{customer.name}</p>
+                    <p className="truncate text-xs text-secondary">
+                      {customer.phone || 'Sin teléfono'}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCustomerId('')
+                      setCustomerQuery('')
+                      setShowCustomers(true)
+                    }}
+                    className="glass glass-hover flex min-h-[44px] shrink-0 items-center gap-1.5 rounded-xl px-3 text-xs font-medium text-sky-300"
+                  >
+                    Cambiar cliente
+                  </button>
+                </div>
+              ) : (
+                <div className="relative mb-4">
+                  <label className="mb-1.5 block text-xs font-medium text-secondary">
+                    Cliente <span className="text-muted">(opcional)</span>
+                  </label>
+                  <div className="glass flex items-center gap-2 rounded-xl px-3 py-2">
+                    <Search className="h-4 w-4 shrink-0 text-muted" />
+                    <input
+                      value={customerQuery}
+                      onChange={(e) => {
+                        setCustomerQuery(e.target.value)
+                        setShowCustomers(true)
+                      }}
+                      onFocus={() => setShowCustomers(true)}
+                      placeholder="Buscar cliente…"
+                      className="w-full bg-transparent text-sm text-primary placeholder:text-muted focus:outline-none"
+                    />
+                  </div>
+                  {showCustomers && (
+                    <div className="absolute z-50 mt-1 w-full overflow-hidden rounded-xl border border-app bg-panel shadow-xl backdrop-blur-md">
+                      {/* Vender sin cliente (mostrador) */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCustomerId('')
+                          setCustomerQuery('')
+                          setShowCustomers(false)
+                        }}
+                        className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-secondary transition-colors hover:bg-card"
+                      >
+                        <span className="text-base">🧍</span>
+                        <span className="flex-1">Sin cliente (mostrador)</span>
+                      </button>
+                      {customerResults.map((c) => (
+                        <button
+                          type="button"
+                          key={c.id}
+                          onClick={() => {
+                            setCustomerId(c.id)
+                            setCustomerQuery('')
+                            setShowCustomers(false)
+                          }}
+                          className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-primary transition-colors hover:bg-card"
+                        >
+                          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/10 text-[10px] font-bold text-white">
+                            {c.name.slice(0, 2).toUpperCase()}
+                          </span>
+                          <span className="min-w-0 flex-1 truncate">{c.name}</span>
+                          <span className="text-xs text-muted">{c.phone}</span>
+                        </button>
+                      ))}
+                      {customerResults.length === 0 && (
+                        <p className="border-t border-app px-3 py-2 text-xs text-muted">
+                          No se encontraron clientes
+                        </p>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowCustomers(false)
+                          setCustomerModalOpen(true)
+                        }}
+                        className="flex w-full items-center gap-2 border-t border-app px-3 py-2 text-left text-sm font-medium text-sky-300 transition-colors hover:bg-card"
+                      >
+                        <UserPlus className="h-4 w-4" />
+                        Crear cliente nuevo…
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
 
               <div className="mb-4 grid grid-cols-2 gap-4">
                 <div>
@@ -755,6 +859,14 @@ export default function SaleFormModal({
         onClose={() => setScannerOpen(false)}
         onScan={handleCameraBarcodeScanned}
         startWithManual={scannerManual}
+      />
+
+      {/* Modal de cliente: al guardar selecciona el cliente y cierra el buscador */}
+      <CustomerFormModal
+        open={customerModalOpen}
+        customer={null}
+        onClose={() => setCustomerModalOpen(false)}
+        onSaved={handleCustomerSaved}
       />
     </>
   )
